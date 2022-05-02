@@ -1,0 +1,11 @@
+# General
+__pycache__/
+data/
+logs/
+slurm/
+*.sh
+*.slurm
+*.pt
+
+# VAE
+VAE/images/
