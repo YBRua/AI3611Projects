@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from tqdm import tqdm
+from torch.utils.tensorboard import SummaryWriter
 
 import data
 from common import get_batch, parse_args, batchify, repackage_hidden
@@ -68,6 +69,8 @@ def train(
                 f"| E {epoch:2d} | {bid:5d}/{len(progress)} |"
                 f" Loss {avg_loss:8.4f} | Ppl {ppl:8.2f}")
 
+    return avg_loss, ppl
+
 
 def evaluate(
         eval_data: torch.Tensor,
@@ -92,7 +95,8 @@ def evaluate(
                 output, hidden = model(samples, hidden)
                 hidden = repackage_hidden(hidden)
             total_loss += len(samples) * criterion(output, targets).item()
-    return total_loss / (len(eval_data) - 1)
+        avg_loss = total_loss / (eval_data.size(0) - 1)
+    return avg_loss, math.exp(avg_loss)
 
 
 # parse args
@@ -104,6 +108,9 @@ if args.save == '':
 # set up logger
 logger = setup_logger(args)
 logger.info(' '.join(sys.argv))
+
+# set up tensorboard
+writer = SummaryWriter()
 
 torch.manual_seed(args.seed)
 if torch.cuda.is_available():
@@ -140,10 +147,19 @@ logger.info(f"Num of Trainable Params: {num_params / 1e6:.2f}M")
 best_val_loss = None
 best_epoch = None
 for epoch in range(1, args.epochs + 1):
-    train(epoch, train_data, model, criterion, optimizer, ntokens, args)
-    val_loss = evaluate(val_data, model, criterion, ntokens, args)
+    train_loss, train_ppl = train(
+        epoch, train_data, model, criterion, optimizer, ntokens, args)
+
+    val_loss, val_ppl = evaluate(
+        val_data, model, criterion, ntokens, args)
+
     logger.info(
-        f'| End of epoch {epoch:3d} | Valid Loss {val_loss:5.4f} | Valid Ppl {math.exp(val_loss):8.2f} |')
+        f'| End of epoch {epoch:3d} | Valid Loss {val_loss:5.4f} | Valid Ppl {val_ppl} |')
+
+    writer.add_scalar('Loss/Train', train_loss, epoch)
+    writer.add_scalar('Loss/Val', val_loss, epoch)
+    writer.add_scalar('Perplexity/Train', train_ppl, epoch)
+    writer.add_scalar('Perplexity/Val', val_ppl, epoch)
 
     # save the model if validation loss is the best we've seen
     if best_val_loss is None or val_loss < best_val_loss:
@@ -167,3 +183,5 @@ test_loss = evaluate(test_data, model, criterion, ntokens, args)
 logger.info(f'| Model arch {args.model:>10s} | Num of Params {num_params / 1e6:3.2f}M |')
 logger.info(f'| Test loss {test_loss:6.3f} | Test Ppl {math.exp(test_loss):9.2f} |')
 logger.info(f'Best model is from epoch {best_epoch}')
+
+writer.close()
