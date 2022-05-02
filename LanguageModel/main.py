@@ -169,7 +169,7 @@ with open(args.save, 'rb') as f:
     # after load the rnn params are not a continuous chunk of memory
     # this makes them a continuous chunk, and will speed up forward pass
     # Currently, only rnn model supports flatten_parameters function.
-    if args.model in ['RNN_TANH', 'RNN_RELU', 'LSTM', 'GRU']:
+    if args.model in ['RNN_TANH', 'RNN_RELU', 'LSTM', 'GRU', 'BiLSTM', 'BiGRU']:
         model.rnn.flatten_parameters()
 
 # Run on test data.

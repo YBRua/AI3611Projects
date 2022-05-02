@@ -159,7 +159,7 @@ with open(SAVE_PATH, 'rb') as f:
     model = torch.load(f)
     logger.info(f'Loaded best model from {SAVE_PATH} (Epoch {best_epoch})')
     # makes params continuous in memory to speed up forward pass
-    if args.model in ['RNN_TANH', 'RNN_RELU', 'LSTM', 'GRU']:
+    if args.model in ['RNN_TANH', 'RNN_RELU', 'LSTM', 'GRU', 'BiLSTM', 'BiGRU']:
         model.rnn.flatten_parameters()
 
 # run on test data

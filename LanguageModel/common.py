@@ -11,8 +11,9 @@ def parse_args():
         '--data', type=str, default='./data/wikitext-2',
         help='location of the data corpus')
     parser.add_argument(
-        '--model', type=str, default='LSTM',
-        help='type of network (RNN_TANH, RNN_RELU, LSTM, GRU, Transformer, S2STransformer, LSTMAttn)')
+        '--model', default='LSTM',
+        choices=['RNN_TANH', 'RNN_RELU', 'LSTM', 'GRU', 'Transformer', 'S2STransformer', 'BiLSTM', 'BiGRU'],
+        help='type of network')
     parser.add_argument(
         '--emsize', type=int, default=200,
         help='size of word embeddings')

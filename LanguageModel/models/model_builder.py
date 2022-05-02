@@ -1,6 +1,6 @@
 import torch.nn as nn
 
-from .rnn import RNNAttention, RNNModel
+from .rnn import RNNModel
 from .transformer import S2STransformer, TransformerModel
 
 
@@ -42,15 +42,16 @@ def get_model(
             nlayers=args.nlayers,
             dropout=args.dropout,
             tie_weights=args.tied)
-    elif architecture in ['LSTMAttn']:
-        model = RNNAttention(
-            rnn_type=args.model.replace('Attn', ''),
+    elif architecture in ['BiLSTM', 'BiGRU']:
+        model = RNNModel(
+            rnn_type=args.model,
             ntoken=input_size,
             ninp=args.emsize,
             nhid=args.nhid,
             nlayers=args.nlayers,
             dropout=args.dropout,
-            tie_weights=args.tied)
+            tie_weights=args.tied,
+            bidirectional=True)
     else:
         raise ValueError(f'Architecture {architecture} does not exist')
 

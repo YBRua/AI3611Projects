@@ -1,8 +1,5 @@
-import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
-from torch import Tensor
 
 
 class RNNModel(nn.Module):
@@ -16,23 +13,30 @@ class RNNModel(nn.Module):
             nhid: int,
             nlayers: int,
             dropout: float = 0.5,
-            tie_weights: bool = False):
+            tie_weights: bool = False,
+            bidirectional: bool = False):
         super(RNNModel, self).__init__()
         self.ntoken = ntoken
         self.drop = nn.Dropout(dropout)
         self.encoder = nn.Embedding(ntoken, ninp)
-        if rnn_type in ['LSTM', 'GRU']:
-            self.rnn = getattr(nn, rnn_type)(
-                ninp, nhid, nlayers, dropout=dropout)
+
+        nhid_ = nhid // 2 if bidirectional else nhid
+
+        if rnn_type in ['LSTM', 'GRU', 'BiLSTM', 'BiGRU']:
+            rnn_type_ = rnn_type.replace('Bi', '')
+            self.rnn = getattr(nn, rnn_type_)(
+                ninp, nhid_, nlayers,
+                dropout=dropout,
+                bidirectional=bidirectional)
         else:
             try:
                 nonlinearity = {'RNN_TANH': 'tanh', 'RNN_RELU': 'relu'}[rnn_type]
             except KeyError:
-                raise ValueError(
-                    "An invalid option for `--model` was supplied,"
-                    "options are ['LSTM', 'GRU', 'RNN_TANH' or 'RNN_RELU']")
+                raise ValueError("Invalid option for `--model`")
             self.rnn = nn.RNN(
-                ninp, nhid, nlayers, nonlinearity=nonlinearity, dropout=dropout)
+                ninp, nhid_, nlayers,
+                nonlinearity=nonlinearity, dropout=dropout,
+                bidirectional=bidirectional)
         self.decoder = nn.Linear(nhid, ntoken)
 
         # Optionally tie weights as in:
@@ -51,6 +55,7 @@ class RNNModel(nn.Module):
         self.rnn_type = rnn_type
         self.nhid = nhid
         self.nlayers = nlayers
+        self.bidirectional = bidirectional
 
     def init_weights(self):
         initrange = 0.1
@@ -59,53 +64,22 @@ class RNNModel(nn.Module):
         nn.init.uniform_(self.decoder.weight, -initrange, initrange)
 
     def forward(self, input, hidden):
-        emb = self.drop(self.encoder(input))
+        emb = self.drop(self.encoder(input))  # L, B, ninp
+
+        # output: L, B, nhid
+        # hidden: nlayer * bi, B, nhid
         output, hidden = self.rnn(emb, hidden)
         output = self.drop(output)
-        decoded = self.decoder(output)
+        decoded = self.decoder(output)  # L, B, ntoken
         decoded = decoded.view(-1, self.ntoken)
         return F.log_softmax(decoded, dim=1), hidden
 
     def init_hidden(self, bsz):
+        nlayers = self.nlayers * 2 if self.bidirectional else self.nlayers
+        nhid = self.nhid // 2 if self.bidirectional else self.nhid
         weight = next(self.parameters())
         if self.rnn_type == 'LSTM':
-            return (weight.new_zeros(self.nlayers, bsz, self.nhid),
-                    weight.new_zeros(self.nlayers, bsz, self.nhid))
+            return (weight.new_zeros(nlayers, bsz, nhid),
+                    weight.new_zeros(nlayers, bsz, nhid))
         else:
-            return weight.new_zeros(self.nlayers, bsz, self.nhid)
-
-
-class RNNAttention(RNNModel):
-    def __init__(
-            self,
-            rnn_type: str,
-            ntoken: int,
-            ninp: int,
-            nhid: int,
-            nlayers: int,
-            dropout: float = 0.5,
-            tie_weights: bool = False):
-        super().__init__(
-            rnn_type, ntoken, ninp, nhid, nlayers, dropout, tie_weights)
-
-        self.attn = nn.Linear(nhid * 2, nhid)
-        nn.init.uniform_(self.attn.weight, -0.1, 0.1)
-
-    def forward(self, x: Tensor):
-        emb = self.drop(self.encoder(x))  # L, B, ninp
-        output, hidden = self.rnn(emb)  # L, B, nhid
-
-        output = output.transpose(0, 1).contiguous()  # B, L, nhid
-        h_ = hidden.transpose(0, 1).contiguous()  # B, L, nhid
-
-        attn_ws = self.attn(torch.cat((output, h_), dim=2))  # B, L, nhid
-        attn_ws = torch.sum(attn_ws, dim=2, keepdim=True)  # B, L, 1
-        attn_ws = F.softmax(attn_ws, dim=1)  # B, L, 1
-        attn_ws = torch.transpose(attn_ws, 1, 2)  # B, 1, L
-        attn_ctx = torch.bmm(attn_ws, hidden.transpose(0, 1))  # B, 1, nhid
-        attn_ctx = torch.squeeze(attn_ctx, 1)  # B, nhid
-
-        attn_ctx = self.drop(attn_ctx)
-        decoded = self.decoder(attn_ctx)
-        decoded = decoded.view(-1, self.ntoken)
-        return F.log_softmax(decoded, dim=1), hidden
+            return weight.new_zeros(nlayers, bsz, nhid)
