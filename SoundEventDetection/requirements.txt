@@ -1,0 +1,14 @@
+soundfile
+librosa
+tqdm
+numpy
+pandas
+pypeln
+h5py
+torch
+scikit-learn
+tabulate
+scipy
+PyYAML
+sed_eval
+scikit-multilearn
