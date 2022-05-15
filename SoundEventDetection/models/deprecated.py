@@ -2,81 +2,10 @@ import math
 import torch
 import torch.nn as nn
 
-from typing import List, Optional
+from .conv_blocks import ConvBlock
+from .common import linear_softmax_pooling
 
-
-def linear_softmax_pooling(x):
-    return (x ** 2).sum(1) / x.sum(1)
-
-
-class ConvBlock(nn.Module):
-    def __init__(
-            self,
-            in_channels: int,
-            out_channels: int,
-            kernel_size: int = 3,
-            pooling_size: Optional[int] = 2):
-        super().__init__()
-        self.conv = nn.Conv2d(
-            in_channels, out_channels, kernel_size, padding=kernel_size // 2)
-        self.bn = nn.BatchNorm2d(out_channels)
-        self.activation = nn.ReLU()
-
-        self.pooling = None
-        if pooling_size is not None:
-            self.pooling = nn.MaxPool2d((1, pooling_size))
-
-    def forward(self, x: torch.Tensor):
-        """Forward function of the convolution block
-
-        Args:
-            x (Tensor): Input Tensor of shape [B, C_in, T, F_in]
-
-        Returns:
-            Tensor: Output Tensor of shape [B, C_out, T, F_out]
-        """
-        x = self.conv(x)
-        x = self.bn(x)
-        x = self.activation(x)
-
-        if self.pooling is not None:
-            x = self.pooling(x)
-        return x
-
-
-class ResConvBlock(nn.Module):
-    def __init__(
-            self,
-            in_channels: int,
-            out_channels: int,
-            kernel_size: int = 3,
-            pooling_size: int = 2):
-        super().__init__()
-
-        self.downsample = None
-        if in_channels != out_channels:
-            self.downsample = nn.Conv2d(
-                in_channels, out_channels, kernel_size=1, bias=False)
-
-        self.conv = nn.Conv2d(
-            in_channels, out_channels, kernel_size, padding=kernel_size // 2)
-
-        self.bn = nn.BatchNorm2d(out_channels)
-        self.activation = nn.ReLU()
-        self.pooling = nn.MaxPool2d((1, pooling_size))
-
-    def forward(self, x: torch.Tensor):
-        identity = x
-        out = self.conv(x)
-        out = self.bn(out)
-
-        if self.downsample is not None:
-            identity = self.downsample(x)
-
-        out += identity
-        out = self.activation(out)
-        out = self.pooling(out)
-        return out
+from typing import List
 
 
 class MHAttention(nn.Module):
@@ -124,7 +53,7 @@ class MHAttention(nn.Module):
 
         out = torch.bmm(attn, v)  # B * nheads, length, d_k
         out = out.reshape(
-            B, self.nheads, N, self.d_k).transpose(1, 2)  # B, length, nheads, d_k
+            B, self.nheads, N, self.d_k).transpose(1, 2)  # B, L, nheads, d_k
         # B, length, nheads * d_k
         out = out.reshape(B, -1, self.nheads * self.d_k)
         return out
@@ -182,7 +111,8 @@ class PositionalEncoding(nn.Module):
         pe = torch.zeros(max_len, embedding_dim)
         position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
         div_term = torch.exp(
-            torch.arange(0, embedding_dim, 2).float() * (-math.log(10000.0) / embedding_dim))
+            torch.arange(0, embedding_dim, 2).float()
+            * (-math.log(10000.0) / embedding_dim))
         pe[:, 0::2] = torch.sin(position * div_term)
         pe[:, 1::2] = torch.cos(position * div_term)
         pe = pe.unsqueeze(0).transpose(0, 1)
@@ -247,83 +177,6 @@ class CMHA(nn.Module):
     def forward(self, x):
         frame_wise_prob = self.detection(x)
         clip_prob = linear_softmax_pooling(frame_wise_prob)
-        '''(samples_num, feature_maps)'''
-        return {
-            'clip_probs': clip_prob,
-            'time_probs': frame_wise_prob
-        }
-
-
-class Crnn(nn.Module):
-    def __init__(
-            self,
-            num_freq: int,
-            class_num: int,
-            n_channels: List[int] = [16, 32, 64],
-            pooling_sizes: List[int] = [4, 4, 2],
-            gru_layers: int = 2,
-            dropout: float = 0.0,
-            gru_hidden: Optional[int] = None):
-        ##############################
-        # YOUR IMPLEMENTATION
-        # Args:
-        #     num_freq: int, mel frequency bins
-        #     class_num: int, the number of output classes
-        ##############################
-        super().__init__()
-
-        if len(pooling_sizes) != 3:
-            raise ValueError('pooling_sizes should be a list of 3 ints')
-        if len(n_channels) != 3:
-            raise ValueError('n_channels should be a list of 3 ints')
-
-        self.bn = nn.BatchNorm2d(1)
-        self.conv1 = ConvBlock(
-            1, n_channels[0], pooling_size=pooling_sizes[0])
-        self.conv2 = ConvBlock(
-            n_channels[0], n_channels[1], pooling_size=pooling_sizes[1])
-        self.conv3 = ConvBlock(
-            n_channels[1], n_channels[2], pooling_size=pooling_sizes[2])
-        # self.conv1 = ResConvBlock(1, 16, pooling_size=pooling_sizes[0])
-        # self.conv2 = ResConvBlock(16, 32, pooling_size=pooling_sizes[1])
-        # self.conv3 = ResConvBlock(32, 64, pooling_size=pooling_sizes[2])
-
-        h_factor = num_freq
-        for psz in pooling_sizes:
-            h_factor //= psz
-
-        hid_size = n_channels[-1] * h_factor
-
-        if gru_hidden is None:
-            gru_hidden = hid_size
-
-        self.gru = nn.GRU(
-            hid_size, gru_hidden, gru_layers, dropout=dropout,
-            batch_first=True, bidirectional=True)
-
-        self.linear = nn.Linear(gru_hidden * 2, class_num)
-
-    def detection(self, x):
-        ##############################
-        # YOUR IMPLEMENTATION
-        # Args:
-        #     x: [batch_size, time_steps, num_freq]
-        # Return:
-        #     frame_wise_prob: [batch_size, time_steps, class_num]
-        ##############################
-        x = self.bn(x.unsqueeze(1))
-        x = self.conv1(x)
-        x = self.conv2(x)
-        x = self.conv3(x)  # B, C, T, F
-        x = x.permute(0, 2, 1, 3)  # B, T, C, F
-        x = x.flatten(start_dim=2)  # B, T, C * F
-        x = self.gru(x)[0]  # B, T, C * F
-        x = self.linear(x)  # B, T, class_num
-        return torch.sigmoid(x)
-
-    def forward(self, x):
-        frame_wise_prob = self.detection(x)  # B, T, ncls
-        clip_prob = linear_softmax_pooling(frame_wise_prob)  # B, ncls
         '''(samples_num, feature_maps)'''
         return {
             'clip_probs': clip_prob,
