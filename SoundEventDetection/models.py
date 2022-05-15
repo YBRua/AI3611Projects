@@ -49,12 +49,14 @@ class Crnn(nn.Module):
         #     num_freq: int, mel frequency bins
         #     class_num: int, the number of output classes
         ##############################
-        self.bn = nn.BatchNorm2d(num_freq)
+        super().__init__()
+
+        self.bn = nn.BatchNorm2d(1)
         self.conv1 = ConvBlock(1, 16)
         self.conv2 = ConvBlock(16, 32)
         self.conv3 = ConvBlock(32, 64)
 
-        self.gru = nn.GRU(64, 64, 2, batch_first=True, bidirectional=True)
+        self.gru = nn.GRU(64 * 8, 64, 2, batch_first=True, bidirectional=True)
 
         self.linear = nn.Linear(64 * 2, class_num)
 
@@ -66,17 +68,17 @@ class Crnn(nn.Module):
         # Return:
         #     frame_wise_prob: [batch_size, time_steps, class_num]
         ##############################
-        x = self.bn(x)
-        x = self.conv1(x.unqueeze(1))
+        x = self.bn(x.unsqueeze(1))
+        x = self.conv1(x)
         x = self.conv2(x)
         x = self.conv3(x)  # B, C, T, F
         x = x.permute(0, 2, 1, 3)  # B, T, C, F
         x = x.flatten(start_dim=2)  # B, T, C * F
         x = self.gru(x)[0]  # B, T, C * F
         x = self.linear(x)  # B, T, class_num
-        return x
-        
-    def forward(self, x): 
+        return torch.sigmoid(x)
+
+    def forward(self, x):
         frame_wise_prob = self.detection(x)
         clip_prob = linear_softmax_pooling(frame_wise_prob)
         '''(samples_num, feature_maps)'''

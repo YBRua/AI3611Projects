@@ -119,7 +119,7 @@ class Runner(object):
 
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
             optimizer, **config['scheduler_args'])
-        
+
         not_improve_cnt = 0
         best_loss = float("inf")
 
