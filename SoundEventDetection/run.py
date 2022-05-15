@@ -23,8 +23,7 @@ import metrics
 import losses
 
 DEVICE = 'cpu'
-if torch.cuda.is_available(
-        ):
+if torch.cuda.is_available():
     DEVICE = 'cuda'
     # Without results are slightly inconsistent
     torch.backends.cudnn.deterministic = True

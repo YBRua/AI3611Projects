@@ -14,10 +14,9 @@ optimizer:
 
 epochs: 100 
 model:
-    type: Crnn
+    type: CMHA
     args: {
-        pooling_sizes: [4, 4, 2],
-        gru_layers: 2,
+        pooling_sizes: [4],
         dropout: 0.2
     }
 
