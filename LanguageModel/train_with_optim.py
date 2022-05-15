@@ -154,7 +154,7 @@ for epoch in range(1, args.epochs + 1):
         val_data, model, criterion, ntokens, args)
 
     logger.info(
-        f'| End of epoch {epoch:3d} | Valid Loss {val_loss:5.4f} | Valid Ppl {val_ppl} |')
+        f'| End of epoch {epoch:3d} | Valid Loss {val_loss:9.4f} | Valid Ppl {val_ppl:9.4f} |')
 
     writer.add_scalar('Loss/Train', train_loss, epoch)
     writer.add_scalar('Loss/Val', val_loss, epoch)
@@ -179,9 +179,9 @@ with open(SAVE_PATH, 'rb') as f:
         model.rnn.flatten_parameters()
 
 # run on test data
-test_loss = evaluate(test_data, model, criterion, ntokens, args)
+test_loss, test_ppl = evaluate(test_data, model, criterion, ntokens, args)
 logger.info(f'| Model arch {args.model:>10s} | Num of Params {num_params / 1e6:3.2f}M |')
-logger.info(f'| Test loss {test_loss:6.3f} | Test Ppl {math.exp(test_loss):9.2f} |')
+logger.info(f'| Test loss {test_loss:6.3f} | Test Ppl {test_ppl:9.2f} |')
 logger.info(f'Best model is from epoch {best_epoch}')
 
 writer.close()
