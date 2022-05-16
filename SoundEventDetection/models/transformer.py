@@ -3,7 +3,6 @@ import torch
 import torch.nn as nn
 
 from .conv_blocks import ConvBlock
-from .common import linear_softmax_pooling
 
 from typing import List
 
@@ -123,60 +122,64 @@ class PositionalEncoding(nn.Module):
         return self.dropout(x)
 
 
-class CMHA(nn.Module):
+class ConvTransformer(nn.Module):
     def __init__(
             self,
             num_freq: int,
             class_num: int,
-            pooling_sizes: List[int] = [4],
+            n_channels: List[int] = [16, 32, 64],
+            pooling_sizes: List[int] = [4, 4, 2],
             dropout: float = 0.2):
-        ##############################
-        # YOUR IMPLEMENTATION
-        # Args:
-        #     num_freq: int, mel frequency bins
-        #     class_num: int, the number of output classes
-        ##############################
         super().__init__()
 
-        if len(pooling_sizes) != 1:
-            raise ValueError('pooling_sizes should be a list of 1 ints')
+        if len(pooling_sizes) != 3:
+            raise ValueError('pooling_sizes should be a list of 3 ints')
 
-        self.bn = nn.BatchNorm2d(1)
-        self.conv1 = ConvBlock(1, 32, kernel_size=3, stride=1, padding=1)
+        self.conv1 = ConvBlock(
+            1, n_channels[0], pooling_size=pooling_sizes[0])
+        self.conv2 = ConvBlock(
+            n_channels[0], n_channels[1], pooling_size=pooling_sizes[1])
+        self.conv3 = ConvBlock(
+            n_channels[1], n_channels[2], pooling_size=pooling_sizes[2])
 
         h_factor = num_freq
         for psz in pooling_sizes:
             h_factor //= psz
 
-        hid_size = 16 * h_factor
+        hid_size = n_channels[-1] * h_factor
 
         self.pos_encoding = PositionalEncoding(hid_size, dropout)
-        self.transformer = TransformerBlock(hid_size, hid_size, 8, dropout)
+        self.cls_token = nn.Parameter(
+            torch.zeros(1, 1, hid_size), requires_grad=True)
+        self.transformer = TransformerBlock(
+            hid_size, hid_size, nhead=8, dropout=dropout)
 
         self.linear = nn.Linear(hid_size, class_num)
 
-    def detection(self, x):
-        ##############################
-        # YOUR IMPLEMENTATION
-        # Args:
-        #     x: [batch_size, time_steps, num_freq]
-        # Return:
-        #     frame_wise_prob: [batch_size, time_steps, class_num]
-        ##############################
-        x = self.bn(x.unsqueeze(1))
-        x = self.conv1(x)  # B, C, T, 1
-        x = self.conv_bn(x)
+    def detection(self, x: torch.Tensor):
+        # x: [batch_size, time_steps, num_freq]
+        # frame_wise_prob: [batch_size, time_steps, class_num]
+
+        x = x.unsqueeze(1)
+
+        x = self.conv1(x)  # B, C, T, H
+        x = self.conv2(x)
+        x = self.conv3(x)  # B, C, T, 1
 
         x = x.permute(0, 2, 1, 3)  # B, T, C, 1
         x = x.flatten(start_dim=2)  # B, T, C
+        cls_token = torch.repeat_interleave(self.cls_token, x.shape[0], 0)
+        x = torch.cat((cls_token, x), dim=1)
+
         x = self.pos_encoding(x)
-        x = self.transformer(x)  # B, T, C * F
-        x = self.linear(x)  # B, T, class_num
+        x = self.transformer(x)  # B, T+1, C * F
+        x = self.linear(x)  # B, T+1, class_num
         return torch.sigmoid(x)
 
     def forward(self, x):
-        frame_wise_prob = self.detection(x)
-        clip_prob = linear_softmax_pooling(frame_wise_prob)
+        outputs = self.detection(x)  # B, T+1, class_num
+        frame_wise_prob = outputs[:, 1:, :]
+        clip_prob = outputs[:, 0, :]  # [CLS] token as clip prediction
         '''(samples_num, feature_maps)'''
         return {
             'clip_probs': clip_prob,

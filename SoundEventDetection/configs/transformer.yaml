@@ -14,9 +14,10 @@ optimizer:
 
 epochs: 100 
 model:
-    type: CMHA
+    type: ConvTransformer
     args: {
-        pooling_sizes: [4],
+        n_channels: [16, 32, 64],
+        pooling_sizes: [2, 2, 2],
         dropout: 0.2
     }
 
