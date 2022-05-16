@@ -16,11 +16,15 @@ from tqdm import tqdm
 import sklearn.metrics as skmetrics
 from tabulate import tabulate
 
+from typing import Dict, Optional
+
+import random
 import dataset
 import models
 import utils
 import metrics
 import losses
+import augmentation
 
 DEVICE = 'cpu'
 if torch.cuda.is_available():
@@ -41,10 +45,34 @@ class Runner(object):
         super().__init__()
         torch.manual_seed(seed)
         np.random.seed(seed)
+        random.seed(seed)
 
     @staticmethod
-    def _forward(model, batch):
+    def _forward(model, batch, augment_cfg: Optional[Dict] = None):
         aids, feats, targets = batch
+
+        if augment_cfg is not None:
+            n_samples = augment_cfg['n_samples']
+            modes = augment_cfg['mode']
+            augmented_feats, augmented_targets = [], []
+            augmented_feats.append(feats)
+            augmented_targets.append(targets)
+            if 'mixup' in modes:
+                feats, targets = augmentation.mixup(batch, n_samples)
+                augmented_feats.append(feats)
+                augmented_targets.append(targets)
+            if 'block_mixing' in modes:
+                feats, targets = augmentation.block_mixing(batch, n_samples)
+                augmented_feats.append(feats)
+                augmented_targets.append(targets)
+            feats = torch.cat(augmented_feats, dim=0)
+            targets = torch.cat(augmented_targets, dim=0)
+
+            # another shuffle after augmentation
+            idx = torch.randperm(len(feats), dtype=torch.long)
+            feats = feats[idx]
+            targets = targets[idx]
+
         feats = feats.to(DEVICE).float()
         targets = targets.to(DEVICE).float()
         output = model(feats)
@@ -73,10 +101,10 @@ class Runner(object):
             for line in reader.readlines():
                 idx, label = line.strip().split(",")
                 label_to_idx[label] = int(idx)
-        labels_df = pd.read_csv(config['data']['label'],
-                                sep='\s+').convert_dtypes()
-        label_array = labels_df["event_labels"].apply(lambda x: utils.encode_label(
-            x, label_to_idx))
+        labels_df = pd.read_csv(
+            config['data']['label'], sep='\s+').convert_dtypes()
+        label_array = labels_df["event_labels"].apply(
+            lambda x: utils.encode_label(x, label_to_idx))
         label_array = np.stack(label_array.values)
         train_df, cv_df = utils.split_train_cv(
             labels_df, y=label_array, stratified=config["data"]["stratified"])
@@ -124,13 +152,13 @@ class Runner(object):
 
         # Training
         for epoch in range(1, config['epochs'] + 1):
-
+            augment_cfg = config['augment'] if 'augment' in config else None
             model.train()
             loss_history = []
             with torch.enable_grad(), tqdm(total=len(trainloader), unit="batch", leave=False) as pbar:
                 for batch in trainloader:
                     optimizer.zero_grad()
-                    output = self._forward(model, batch)
+                    output = self._forward(model, batch, augment_cfg)
                     loss = loss_fn(output)
                     loss.backward()
                     optimizer.step()
