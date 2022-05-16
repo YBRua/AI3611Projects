@@ -14,13 +14,13 @@ optimizer:
 
 epochs: 100 
 model:
-    type: Crnn
+    type: GatedCrnn
     args: {
         n_channels: [16, 32, 64],
-        pooling_sizes: [4, 4, 2],
-        gru_layers: 2,
-        dropout: 0.2,
-        conv_block: res
+        pooling_sizes: [4, 2, 2],
+        gru_layers: 1,
+        gru_hidden: 128,
+        conv_block: glu
     }
 
 outputpath: experiments/

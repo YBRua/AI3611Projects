@@ -1,2 +1,2 @@
-from .crnn import Crnn
+from .crnn import Crnn, GatedCrnn
 from .transformer import ConvTransformer
