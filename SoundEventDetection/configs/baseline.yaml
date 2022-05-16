@@ -1,39 +1,30 @@
 augment:
   mode:
   - block_mixing
-  - mixup
   n_samples: 8
 data:
-  class_indice_file: data/metadata/class_label_indices.txt
-  feature: data/dev/feature.csv
-  label: data/dev/label.csv
-  stratified: true
+    feature: data/dev/feature.csv
+    label: data/dev/label.csv
+    class_indice_file: data/metadata/class_label_indices.txt
+    stratified: True
 dataloader_args:
-  batch_size: 32
-  num_workers: 1
-early_stop: 7
-epochs: 100
-loss: BceLoss
-model:
-  args:
-    conv_block: res
-    dropout: 0.2
-    gru_layers: 2
-    n_channels:
-    - 16
-    - 32
-    - 64
-    pooling_sizes:
-    - 4
-    - 4
-    - 2
-  type: Crnn
-num_workers: 2
+    batch_size: 32
+    num_workers: 1
+
 optimizer:
-  args:
-    lr: 0.001
-  type: AdamW
+    type: AdamW
+    args:
+        lr: 0.001
+
+epochs: 100 
+model:
+    type: Crnn
+    conv_block: conv
+    args: {
+        n_channels: [16, 32, 64],
+        pooling_sizes: [4, 4, 2],
+        gru_layers: 2,
+        dropout: 0.2
+    }
+
 outputpath: experiments/
-scheduler_args:
-  factor: 0.1
-  patience: 3

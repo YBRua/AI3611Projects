@@ -31,9 +31,9 @@ def block_mixing(
         n_samples: int = 8):
     aids, feats, targets = batch
     idx1 = torch.randperm(
-        len(batch), dtype=torch.long)[:n_samples]
+        len(feats), dtype=torch.long)[:n_samples]
     idx2 = torch.randperm(
-        len(batch), dtype=torch.long)[:n_samples]
+        len(feats), dtype=torch.long)[:n_samples]
     
     feats1 = feats[idx1]
     feats2 = feats[idx2]

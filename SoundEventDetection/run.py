@@ -228,7 +228,7 @@ class Runner(object):
                 idx, label = line.strip().split(",")
                 label_to_idx[label] = int(idx)
                 idx_to_label[int(idx)] = label
-        
+
         dataloader = torch.utils.data.DataLoader(
             dataset.InferenceDataset(feature),
             batch_size=1,
@@ -266,7 +266,7 @@ class Runner(object):
                         "event_label"].unique()
                     clip_targets.append(utils.encode_label(clip_target,
                         label_to_idx))
-                    
+
                     # clip results after postprocessing
                     clip_pred = clip_prob_batch[sample_idx].reshape(1, -1)
                     clip_pred = utils.binarize(clip_pred)[0]
