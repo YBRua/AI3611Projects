@@ -1,3 +1,7 @@
+augment:
+  mode:
+  - block_mixing
+  n_samples: 8
 data:
     feature: data/dev/feature.csv
     label: data/dev/label.csv
@@ -15,11 +19,11 @@ optimizer:
 epochs: 100 
 model:
     type: Crnn
+    conv_block: res
     args: {
-        n_channels: [128, 128, 192],
-        pooling_sizes: [8, 4, 2],
-        gru_layers: 2,
-        gru_hidden: 128,
+        n_channels: [32, 64, 128],
+        pooling_sizes: [4, 4, 2],
+        gru_layers: 3,
         dropout: 0.2
     }
 

@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+import sys
 import datetime
 
 import uuid
@@ -52,19 +53,22 @@ class Runner(object):
         aids, feats, targets = batch
 
         if augment_cfg is not None:
-            n_samples = augment_cfg['n_samples']
             modes = augment_cfg['mode']
             augmented_feats, augmented_targets = [], []
-            augmented_feats.append(feats)
-            augmented_targets.append(targets)
+
             if 'mixup' in modes:
-                feats, targets = augmentation.mixup(batch, n_samples)
+                feats_, targets_ = augmentation.mixup(batch, len(feats))
+                augmented_feats.append(feats_)
+                augmented_targets.append(targets_)
+            else:
+                # in mixup mode, we do not retain the original dataset
                 augmented_feats.append(feats)
                 augmented_targets.append(targets)
             if 'block_mixing' in modes:
-                feats, targets = augmentation.block_mixing(batch, n_samples)
-                augmented_feats.append(feats)
-                augmented_targets.append(targets)
+                feats_, targets_ = augmentation.block_mixing(batch, 8)
+                augmented_feats.append(feats_)
+                augmented_targets.append(targets_)
+
             feats = torch.cat(augmented_feats, dim=0)
             targets = torch.cat(augmented_targets, dim=0)
 
@@ -80,17 +84,19 @@ class Runner(object):
         output["targets"] = targets
         return output
 
-    def train(self, config_file, **kwargs):
+    def train(self, config_file, log_postfix, **kwargs):
         config = utils.parse_config_or_kwargs(config_file, **kwargs)
+        postfix = log_postfix if log_postfix != '' else uuid.uuid1().hex
         outputdir = os.path.join(
             config['outputpath'], config['model']['type'],
             "{}_{}".format(
                 datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%m'),
-                uuid.uuid1().hex))
+                postfix))
         # Create base dir
         Path(outputdir).mkdir(exist_ok=True, parents=True)
 
         logger = utils.getfile_outlogger(os.path.join(outputdir, 'train.log'))
+        logger.info(' '.join(sys.argv))
         logger.info("Storing files in {}".format(outputdir))
         # utils.pprint_dict
         utils.pprint_dict(config, logger.info)
@@ -351,8 +357,9 @@ class Runner(object):
             config_file,
             eval_feature,
             eval_label,
+            log_postfix='',
             **eval_kwargs):
-        experiment_path = self.train(config_file)
+        experiment_path = self.train(config_file, log_postfix)
         self.evaluate(experiment_path, eval_feature, eval_label, **eval_kwargs)
 
 

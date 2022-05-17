@@ -8,7 +8,7 @@ from typing import Tuple
 def mixup(
         batch: Tuple[np.ndarray, Tensor, Tensor],
         n_samples: int = 8,
-        alpha: float = 0.35):
+        alpha: float = 0.2):
     lamb = np.random.beta(alpha, alpha)
     aids, feats, targets = batch
     idx1 = torch.randperm(

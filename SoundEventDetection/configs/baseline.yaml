@@ -1,7 +1,7 @@
 augment:
   mode:
+#   - mixup
   - block_mixing
-  n_samples: 8
 data:
     feature: data/dev/feature.csv
     label: data/dev/label.csv
@@ -16,15 +16,16 @@ optimizer:
     args:
         lr: 0.001
 
-epochs: 100 
+epochs: 100
 model:
     type: Crnn
-    conv_block: conv
+    conv_block: res
     args: {
         n_channels: [16, 32, 64],
-        pooling_sizes: [4, 4, 2],
+        pooling_sizes: [4, 2, 2],
         gru_layers: 2,
         dropout: 0.2
     }
 
 outputpath: experiments/
+# python run.py train_evaluate configs/baseline.yaml data/eval/feature.csv data/eval/label.csv conv_aug_d0.2_1 --window_size=25
