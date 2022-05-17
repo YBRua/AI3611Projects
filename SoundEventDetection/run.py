@@ -54,28 +54,29 @@ class Runner(object):
 
         if augment_cfg is not None:
             modes = augment_cfg['mode']
-            augmented_feats, augmented_targets = [], []
 
-            if 'mixup' in modes:
-                feats_, targets_ = augmentation.mixup(batch, len(feats))
+            # 'xblock_mixing' can only be applied independently
+            if 'xblock_mixing' in modes:
+                feats_, targets_ = augmentation.xctx_block_mixing(batch, 8)
+                augmented_feats, augmented_targets = [feats], [targets]
                 augmented_feats.append(feats_)
                 augmented_targets.append(targets_)
+                feats = torch.cat(augmented_feats, dim=0)
+                targets = torch.cat(augmented_targets, dim=0)
+                # another shuffle after augmentation
+                idx = torch.randperm(len(feats), dtype=torch.long)
+                feats = feats[idx]
+                targets = targets[idx]
             else:
-                # in mixup mode, we do not retain the original dataset
-                augmented_feats.append(feats)
-                augmented_targets.append(targets)
-            if 'block_mixing' in modes:
-                feats_, targets_ = augmentation.block_mixing(batch, 8)
-                augmented_feats.append(feats_)
-                augmented_targets.append(targets_)
-
-            feats = torch.cat(augmented_feats, dim=0)
-            targets = torch.cat(augmented_targets, dim=0)
-
-            # another shuffle after augmentation
-            idx = torch.randperm(len(feats), dtype=torch.long)
-            feats = feats[idx]
-            targets = targets[idx]
+                if 'mixup' in modes:
+                    feats_, targets_ = augmentation.mixup(batch, len(feats))
+                    feats, targets = feats_, targets_
+                if 'time_shift' in modes:
+                    feats_, targets_ = augmentation.time_shift(batch, len(feats))
+                    feats, targets = feats_, targets_
+                if 'spec_aug' in modes:
+                    feats_, targets_ = augmentation.spec_aug(batch, len(feats))
+                    feats, targets = feats_, targets_
 
         feats = feats.to(DEVICE).float()
         targets = targets.to(DEVICE).float()

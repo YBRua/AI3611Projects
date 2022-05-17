@@ -1,7 +1,6 @@
 augment:
   mode:
-#   - mixup
-  - block_mixing
+  - spec_aug
 data:
     feature: data/dev/feature.csv
     label: data/dev/label.csv
