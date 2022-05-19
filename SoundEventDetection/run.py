@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+import sys
 import datetime
 
 import uuid
@@ -16,15 +17,18 @@ from tqdm import tqdm
 import sklearn.metrics as skmetrics
 from tabulate import tabulate
 
+from typing import Dict, Optional
+
+import random
 import dataset
 import models
 import utils
 import metrics
 import losses
+import augmentation
 
 DEVICE = 'cpu'
-if torch.cuda.is_available(
-        ):
+if torch.cuda.is_available():
     DEVICE = 'cuda'
     # Without results are slightly inconsistent
     torch.backends.cudnn.deterministic = True
@@ -42,10 +46,38 @@ class Runner(object):
         super().__init__()
         torch.manual_seed(seed)
         np.random.seed(seed)
+        random.seed(seed)
 
     @staticmethod
-    def _forward(model, batch):
+    def _forward(model, batch, augment_cfg: Optional[Dict] = None):
         aids, feats, targets = batch
+
+        if augment_cfg is not None:
+            modes = augment_cfg['mode']
+
+            # 'xblock_mixing' can only be applied independently
+            if 'xblock_mixing' in modes:
+                feats_, targets_ = augmentation.xctx_block_mixing(batch, 8)
+                augmented_feats, augmented_targets = [feats], [targets]
+                augmented_feats.append(feats_)
+                augmented_targets.append(targets_)
+                feats = torch.cat(augmented_feats, dim=0)
+                targets = torch.cat(augmented_targets, dim=0)
+                # another shuffle after augmentation
+                idx = torch.randperm(len(feats), dtype=torch.long)
+                feats = feats[idx]
+                targets = targets[idx]
+            else:
+                if 'mixup' in modes:
+                    feats_, targets_ = augmentation.mixup(batch, len(feats))
+                    feats, targets = feats_, targets_
+                if 'time_shift' in modes:
+                    feats_, targets_ = augmentation.time_shift(batch, len(feats))
+                    feats, targets = feats_, targets_
+                if 'spec_aug' in modes:
+                    feats_, targets_ = augmentation.spec_aug(batch, len(feats))
+                    feats, targets = feats_, targets_
+
         feats = feats.to(DEVICE).float()
         targets = targets.to(DEVICE).float()
         output = model(feats)
@@ -53,17 +85,19 @@ class Runner(object):
         output["targets"] = targets
         return output
 
-    def train(self, config_file, **kwargs):
+    def train(self, config_file, log_postfix, **kwargs):
         config = utils.parse_config_or_kwargs(config_file, **kwargs)
+        postfix = log_postfix if log_postfix != '' else uuid.uuid1().hex
         outputdir = os.path.join(
             config['outputpath'], config['model']['type'],
             "{}_{}".format(
                 datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%m'),
-                uuid.uuid1().hex))
+                postfix))
         # Create base dir
         Path(outputdir).mkdir(exist_ok=True, parents=True)
 
         logger = utils.getfile_outlogger(os.path.join(outputdir, 'train.log'))
+        logger.info(' '.join(sys.argv))
         logger.info("Storing files in {}".format(outputdir))
         # utils.pprint_dict
         utils.pprint_dict(config, logger.info)
@@ -74,10 +108,10 @@ class Runner(object):
             for line in reader.readlines():
                 idx, label = line.strip().split(",")
                 label_to_idx[label] = int(idx)
-        labels_df = pd.read_csv(config['data']['label'],
-                                sep='\s+').convert_dtypes()
-        label_array = labels_df["event_labels"].apply(lambda x: utils.encode_label(
-            x, label_to_idx))
+        labels_df = pd.read_csv(
+            config['data']['label'], sep='\s+').convert_dtypes()
+        label_array = labels_df["event_labels"].apply(
+            lambda x: utils.encode_label(x, label_to_idx))
         label_array = np.stack(label_array.values)
         train_df, cv_df = utils.split_train_cv(
             labels_df, y=label_array, stratified=config["data"]["stratified"])
@@ -119,19 +153,19 @@ class Runner(object):
 
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
             optimizer, **config['scheduler_args'])
-        
+
         not_improve_cnt = 0
         best_loss = float("inf")
 
         # Training
         for epoch in range(1, config['epochs'] + 1):
-
+            augment_cfg = config['augment'] if 'augment' in config else None
             model.train()
             loss_history = []
             with torch.enable_grad(), tqdm(total=len(trainloader), unit="batch", leave=False) as pbar:
                 for batch in trainloader:
                     optimizer.zero_grad()
-                    output = self._forward(model, batch)
+                    output = self._forward(model, batch, augment_cfg)
                     loss = loss_fn(output)
                     loss.backward()
                     optimizer.step()
@@ -201,7 +235,7 @@ class Runner(object):
                 idx, label = line.strip().split(",")
                 label_to_idx[label] = int(idx)
                 idx_to_label[int(idx)] = label
-        
+
         dataloader = torch.utils.data.DataLoader(
             dataset.InferenceDataset(feature),
             batch_size=1,
@@ -239,7 +273,7 @@ class Runner(object):
                         "event_label"].unique()
                     clip_targets.append(utils.encode_label(clip_target,
                         label_to_idx))
-                    
+
                     # clip results after postprocessing
                     clip_pred = clip_prob_batch[sample_idx].reshape(1, -1)
                     clip_pred = utils.binarize(clip_pred)[0]
@@ -324,8 +358,9 @@ class Runner(object):
             config_file,
             eval_feature,
             eval_label,
+            log_postfix='',
             **eval_kwargs):
-        experiment_path = self.train(config_file)
+        experiment_path = self.train(config_file, log_postfix)
         self.evaluate(experiment_path, eval_feature, eval_label, **eval_kwargs)
 
 

@@ -88,7 +88,7 @@ def pad(tensorlist, batch_first=True, padding_value=0.):
     return padded_seq, length
 
 
-def sequential_collate(return_length=True, length_idxs: List=[]):
+def sequential_collate(return_length=True, length_idxs: List = []):
     def wrapper(batches):
         seqs = []
         lens = []
