@@ -1,5 +1,5 @@
-model: resnet101_attention
-outputpath: experiments/resnet101_attention
+model: resnet101_attention_baseline
+outputpath: experiments/resnet101_attention_baseline
 
 dataset_base_path: /dssg/home/acct-stu/stu464/data/image_caption
 load_img_to_memory: False
