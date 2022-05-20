@@ -21,9 +21,10 @@ from dataset import Flickr8kDataset
 from utils.utils_torch import words_from_tensors_fn
 from utils.util import get_logger, ptb_tokenize
 from models import Captioner
+from scheduled_sampling import get_scheduler_constructor
 
 
-class Runner(object): 
+class Runner(object):
     """Main class to run experiments"""
     def __init__(self, seed=1):
         self.seed = seed
@@ -100,7 +101,7 @@ class Runner(object):
             "test": test_loader
         }
 
-    def train_model(self, train_loader, model, loss_fn, optimizer, desc=''):
+    def train_model(self, train_loader, model, loss_fn, optimizer, epoch, desc=''):
         running_acc = 0.0
         running_loss = 0.0
         model.train()
@@ -112,7 +113,7 @@ class Runner(object):
             optimizer.zero_grad()
 
             scores, caps_sorted, decode_lengths, alphas, sort_ind = model(
-                images, captions, lengths)
+                images, captions, lengths, epoch)
 
             # Since decoding starts with <start>, the targets are all words after <start>, up to <end>
             targets = caps_sorted[:, 1:]
@@ -181,12 +182,15 @@ class Runner(object):
         Path(args["outputpath"]).mkdir(parents=True, exist_ok=True)
         logger = get_logger(Path(args["outputpath"]) / "train.log")
 
+        sched_sampling = get_scheduler_constructor(args["scheduler"])()
+
         model = Captioner(encoded_image_size=14,
                           encoder_dim=2048,
                           attention_dim=args['attention_dim'],
                           embed_dim=args['embedding_dim'],
                           decoder_dim=args['decoder_size'],
-                          vocab_size=vocab_size).to(self.device)
+                          vocab_size=vocab_size,
+                          sched_sampler=sched_sampling).to(self.device)
         logger.info(model)
         model_path = os.path.join(
             args["outputpath"],
@@ -212,7 +216,8 @@ class Runner(object):
                                           model=model,
                                           optimizer=optimizer,
                                           loss_fn=loss_fn,
-                                          train_loader=dataloaders["train"])
+                                          train_loader=dataloaders["train"],
+                                          epoch=epoch)
             with torch.no_grad():
                 val_results = self.evaluate_model(
                     desc=f'Val eval: ', model=model,

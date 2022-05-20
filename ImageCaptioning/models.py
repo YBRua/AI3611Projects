@@ -6,6 +6,8 @@ import torch
 from torch import nn
 import torchvision
 
+from scheduled_sampling import SamplingScheduler
+
 
 class Encoder(nn.Module):
     """
@@ -102,7 +104,8 @@ class DecoderWithAttention(nn.Module):
     """
 
     def __init__(self, attention_dim, embed_dim, decoder_dim,
-                 vocab_size, encoder_dim=2048, dropout=0.5):
+                 vocab_size, encoder_dim=2048, dropout=0.5,
+                 sched_sampler: SamplingScheduler = None):
         """
         :param attention_dim: size of attention network
         :param embed_dim: embedding size
@@ -110,6 +113,8 @@ class DecoderWithAttention(nn.Module):
         :param vocab_size: size of vocabulary
         :param encoder_dim: feature size of encoded images
         :param dropout: dropout
+        :param sched_sampler: scheduler for scheduled sampling
+        :ss_method: method for sampling from the decoder, used in scheduled sampling
         """
         super(DecoderWithAttention, self).__init__()
 
@@ -119,6 +124,7 @@ class DecoderWithAttention(nn.Module):
         self.decoder_dim = decoder_dim
         self.vocab_size = vocab_size
         self.dropout = dropout
+        self.sched_sampler = sched_sampler
 
         self.attention = Attention(encoder_dim, decoder_dim, attention_dim)  # attention network
 
@@ -153,7 +159,7 @@ class DecoderWithAttention(nn.Module):
         c = self.init_c(mean_encoder_out)
         return h, c
 
-    def forward(self, encoder_out, encoded_captions, caption_lengths):
+    def forward(self, encoder_out, encoded_captions, caption_lengths, epoch):
         """
         Forward propagation.
 
@@ -201,6 +207,12 @@ class DecoderWithAttention(nn.Module):
         # attention-weighing the encoder's output based on the decoder's previous hidden state output
         # then generate a new word in the decoder with the previous word and the attention weighted encoding
         for t in range(max(decode_lengths)):
+            # if we have a scheduled sampling scheduler
+            # we can use the scheduler to sample the next word
+            use_own_output = False
+            if self.sched_sampler is not None:
+                use_own_output = self.sched_sampler(epoch)
+
             # only decode items in batch that are longer than current length
             batch_size_t = sum([l > t for l in decode_lengths])
             # [b, encoder_dim], [b, num_pixels] -> [batch_size_t, encoder_dim], [batch_size_t, num_pixels]
@@ -210,15 +222,36 @@ class DecoderWithAttention(nn.Module):
             gate = self.sigmoid(self.f_beta(h[:batch_size_t]))  # gating scalar,
             attention_weighted_encoding = gate * attention_weighted_encoding
             # [batch_size_t, decoder_dim]
-            h, c = self.decode_step(
-                torch.cat([embeddings[:batch_size_t, t, :], attention_weighted_encoding], dim=1),
-                (h[:batch_size_t], c[:batch_size_t]))
+
+            next_input = torch.cat([
+                embeddings[:batch_size_t, t, :],
+                attention_weighted_encoding
+            ], dim=1)
+            if use_own_output and t > 0:
+                # [b,]
+                pred_ids = self._sample_greedy(h[:batch_size_t])
+                # [b, embed_dim]
+                pred_embeddings = self.embedding(pred_ids)
+                next_input = torch.cat([
+                    pred_embeddings,
+                    attention_weighted_encoding
+                ], dim=1)
+
+            h, c = self.decode_step(next_input, (h[:batch_size_t], c[:batch_size_t]))
             # [batch_size_t, vocab_size]
             preds = self.fc(self.dropout(h))
             predictions[:batch_size_t, t, :] = preds
             alphas[:batch_size_t, t, :] = alpha
 
         return predictions, encoded_captions, decode_lengths, alphas, sort_ind
+
+    def _sample_greedy(self, hidden):
+        # hidden: [b, decoder_dim]
+        # [b, vocab_size]
+        probs = self.fc(self.dropout(hidden))
+        # [b]
+        preds = torch.argmax(probs, dim=-1)
+        return preds
 
     def sample(self, encoder_out, startseq_idx, endseq_idx=-1, max_len=40,
                return_alpha=False, **sample_kwargs):
@@ -347,23 +380,28 @@ class DecoderWithAttention(nn.Module):
 
 
 class Captioner(nn.Module):
-    def __init__(self, encoded_image_size, attention_dim, embed_dim,
-        decoder_dim, vocab_size, encoder_dim=2048, dropout=0.5, **kwargs):
+    def __init__(
+            self,
+            encoded_image_size, attention_dim, embed_dim, decoder_dim,
+            vocab_size, encoder_dim=2048, dropout=0.5,
+            sched_sampler=None,
+            **kwargs):
         super().__init__()
         self.encoder = Encoder(encoded_image_size=encoded_image_size)
         self.decoder = DecoderWithAttention(attention_dim, embed_dim,
-            decoder_dim, vocab_size, encoder_dim, dropout)
+            decoder_dim, vocab_size, encoder_dim, dropout, sched_sampler)
 
-    def forward(self, images, encoded_captions, caption_lengths):
+    def forward(self, images, encoded_captions, caption_lengths, epoch):
         """
         :param images: [b, 3, h, w]
         :param encoded_captions: [b, max_len]
         :param caption_lengths: [b,]
+        :param epoch: current epoch number
         :return:
         """
         encoder_out = self.encoder(images)
         decoder_out = self.decoder(encoder_out, encoded_captions,
-                                   caption_lengths.unsqueeze(1))
+                                   caption_lengths.unsqueeze(1), epoch)
         return decoder_out
 
     def sample(self, images, startseq_idx, endseq_idx=-1, max_len=40,
