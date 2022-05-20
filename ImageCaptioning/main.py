@@ -182,8 +182,12 @@ class Runner(object):
         Path(args["outputpath"]).mkdir(parents=True, exist_ok=True)
         logger = get_logger(Path(args["outputpath"]) / "train.log")
 
-        logger.info(f"Using Scheduled Sampling: {args['scheduler']}")
-        sched_sampling = get_scheduler_constructor(args["scheduler"])()
+        logger.info(f"Using Scheduled Sampling: {args['scheduled_sampling']}")
+        ss_builder = get_scheduler_constructor(args["scheduled_sampling"])
+        if ss_builder is not None:
+            sched_sampling = ss_builder()
+        else:
+            sched_sampling = None
 
         model = Captioner(encoded_image_size=14,
                           encoder_dim=2048,
