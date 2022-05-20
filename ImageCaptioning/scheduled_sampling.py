@@ -92,3 +92,17 @@ def get_scheduler_constructor(sched: str) -> Type[SamplingScheduler]:
         return None
     else:
         raise ValueError(f'No scheduler named {sched}')
+
+
+if __name__ == "__main__":
+    scheduler = InvSigmoidScheduler()
+    es = []
+    for e in range(45):
+        bs = []
+        for batch in range(10):
+            print(scheduler(e))
+            bs.append(scheduler(e))
+        es.append(bs)
+
+    for eid, choices in enumerate(es):
+        print(eid, ' '.join(map(str, choices)))
