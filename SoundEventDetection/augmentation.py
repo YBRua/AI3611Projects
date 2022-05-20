@@ -26,14 +26,16 @@ def mixup(
     return feats_extra, targets_extra
 
 
-def time_warp(
+def time_shift(
         batch: Tuple[np.ndarray, Tensor, Tensor],
         n_samples: int = 8,
         mean: int = 0,
         std: int = 50):
     aids, feats, targets = batch
-    shift = torch.normal(mean, std).int().item()
-    feats = torch.roll(x, shift, dims=1)
+
+    shift = int(np.random.normal(mean, std))
+
+    return torch.roll(feats, shift, dims=1), targets
 
 
 def spec_aug(

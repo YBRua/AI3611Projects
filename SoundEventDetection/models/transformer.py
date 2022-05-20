@@ -2,7 +2,7 @@ import math
 import torch
 import torch.nn as nn
 
-from .conv_blocks import ConvBlock
+from .conv_blocks import get_conv_block
 
 from typing import List
 
@@ -127,6 +127,7 @@ class ConvTransformer(nn.Module):
             self,
             num_freq: int,
             class_num: int,
+            conv_block: str = 'conv',
             n_channels: List[int] = [16, 32, 64],
             pooling_sizes: List[int] = [4, 4, 2],
             dropout: float = 0.2):
@@ -135,11 +136,12 @@ class ConvTransformer(nn.Module):
         if len(pooling_sizes) != 3:
             raise ValueError('pooling_sizes should be a list of 3 ints')
 
-        self.conv1 = ConvBlock(
+        conv_block = get_conv_block(conv_block)
+        self.conv1 = conv_block(
             1, n_channels[0], pooling_size=pooling_sizes[0])
-        self.conv2 = ConvBlock(
+        self.conv2 = conv_block(
             n_channels[0], n_channels[1], pooling_size=pooling_sizes[1])
-        self.conv3 = ConvBlock(
+        self.conv3 = conv_block(
             n_channels[1], n_channels[2], pooling_size=pooling_sizes[2])
 
         h_factor = num_freq

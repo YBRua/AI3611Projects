@@ -1,3 +1,6 @@
+augment:
+    mode:
+    - xblock_mixing
 data:
     feature: data/dev/feature.csv
     label: data/dev/label.csv
@@ -18,7 +21,8 @@ model:
     args: {
         n_channels: [16, 32, 64],
         pooling_sizes: [2, 2, 2],
-        dropout: 0.2
+        dropout: 0.2,
+        conv_block: res
     }
 
 outputpath: experiments/

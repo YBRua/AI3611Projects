@@ -1,7 +1,3 @@
-augment:
-  mode:
-  - block_mixing
-  n_samples: 8
 data:
     feature: data/dev/feature.csv
     label: data/dev/label.csv

@@ -1,6 +1,6 @@
 augment:
-  mode:
-  - spec_aug
+    mode:
+    - xblock_mixing
 data:
     feature: data/dev/feature.csv
     label: data/dev/label.csv
@@ -27,4 +27,3 @@ model:
     }
 
 outputpath: experiments/
-# python run.py train_evaluate configs/baseline.yaml data/eval/feature.csv data/eval/label.csv conv_aug_d0.2_1 --window_size=25
