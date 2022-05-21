@@ -7,8 +7,8 @@ import pandas as pd
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("prediction", type=str)
-parser.add_argument("label", type=str, help="path to fold1_evaluate.csv")
+parser.add_argument("--prediction", type=str)
+parser.add_argument("--label", type=str, help="path to fold1_evaluate.csv")
 
 
 keys = ['airport',
