@@ -176,8 +176,8 @@ for epoch in range(1, config["epoch"]):
     print('-' * 99)
     print(
         f'Epoch {epoch}',
-        f'Training Loss: {training_loss[-1]:.4f}'
-        f'CV Loss: {cv_loss[-1]:.4f}')
+        f'Training Loss {training_loss[-1]:.4f}'
+        f'CV Loss {cv_loss[-1]:.4f}')
 
     if cv_loss[-1] == np.min(cv_loss):
         # save current best model
