@@ -44,14 +44,7 @@ config["data"]["dataloader_args"]["batch_size"] = 1
 tt_dataloader = DataLoader(tt_ds, shuffle=False, **
                            config["data"]["dataloader_args"])
 
-model_arch = config["model"]
-print("model architecture:", model_arch)
-if model_arch == "mean_concat_dense":
-    model = models.MeanConcatDense(512, 512, config["num_classes"])
-elif model_arch == "early_baseline":
-    model = models.EarlyBaseline(512, 512, config["num_classes"])
-else:
-    raise ValueError(f"No model named {model_arch}")
+model = models.get_model(config)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 

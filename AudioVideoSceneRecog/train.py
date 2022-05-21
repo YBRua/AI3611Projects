@@ -74,13 +74,7 @@ Path(output_dir).mkdir(exist_ok=True, parents=True)
 logging_writer = utils.getfile_outlogger(os.path.join(output_dir, "train.log"))
 
 # init model
-model_arch = config["model"]
-if model_arch == "mean_concat_dense":
-    model = models.MeanConcatDense(512, 512, config["num_classes"])
-elif model_arch == "early_baseline":
-    model = models.EarlyBaseline(512, 512, config["num_classes"])
-else:
-    raise ValueError(f"No model named {model_arch}")
+model = models.get_model(config)
 
 print(model)
 loss_fn = torch.nn.CrossEntropyLoss()
