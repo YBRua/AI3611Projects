@@ -45,6 +45,7 @@ tt_dataloader = DataLoader(tt_ds, shuffle=False, **
                            config["data"]["dataloader_args"])
 
 model_arch = config["model"]
+print("model architecture:", model_arch)
 if model_arch == "mean_concat_dense":
     model = models.MeanConcatDense(512, 512, config["num_classes"])
 elif model_arch == "early_baseline":
