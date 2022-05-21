@@ -18,6 +18,8 @@ num_classes: 10
 
 output_dir: experiments/baseline
 
+model: mean_concat_dense
+
 optimizer:
     type: Adam
     args:

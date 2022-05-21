@@ -74,7 +74,14 @@ Path(output_dir).mkdir(exist_ok=True, parents=True)
 logging_writer = utils.getfile_outlogger(os.path.join(output_dir, "train.log"))
 
 # init model
-model = models.MeanConcatDense(512, 512, config["num_classes"])
+model_arch = config["model"]
+if model_arch == "mean_concat_dense":
+    model = models.MeanConcatDense(512, 512, config["num_classes"])
+elif model_arch == "early_baseline":
+    model = models.EarlyBaseline(512, 512, config["num_classes"])
+else:
+    raise ValueError(f"No model named {model_arch}")
+
 print(model)
 loss_fn = torch.nn.CrossEntropyLoss()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -153,9 +160,9 @@ def validate(epoch):
     accuracy = accuracy_score(targets, preds)
     logging_writer.info(
         f'| epoch {epoch:3d} '
-        f'| time: {time.time() - start_time:5.2f}s '
-        f'| val loss: {cv_loss:5.2f} '
-        f'| val acc: {accuracy:5.2f} |')
+        f'| time {time.time() - start_time:5.2f}s '
+        f'| validate loss {cv_loss:5.2f} '
+        f'| val acc {accuracy:5.2f} |')
     logging_writer.info('-' * 99)
 
     return cv_loss
@@ -176,7 +183,7 @@ for epoch in range(1, config["epoch"]):
     print('-' * 99)
     print(
         f'Epoch {epoch}',
-        f'Training Loss {training_loss[-1]:.4f}'
+        f'Training Loss {training_loss[-1]:.4f}',
         f'CV Loss {cv_loss[-1]:.4f}')
 
     if cv_loss[-1] == np.min(cv_loss):
