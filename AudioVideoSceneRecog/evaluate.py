@@ -6,7 +6,8 @@ import pandas as pd
 import torch
 from torch.utils.data import DataLoader
 import yaml
-from sklearn.metrics import accuracy_score, confusion_matrix, log_loss, classification_report
+from sklearn.metrics import accuracy_score, confusion_matrix, log_loss
+from sklearn.metrics import classification_report
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 import seaborn as sn
@@ -30,15 +31,18 @@ std_audio = mean_std_audio["global_std"]
 mean_video = mean_std_video["global_mean"]
 std_video = mean_std_video["global_std"]
 
-audio_transform = lambda x: (x - mean_audio) / std_audio
-video_transform = lambda x: (x - mean_video) / std_video
+
+def audio_transform(x): return (x - mean_audio) / std_audio
+def video_transform(x): return (x - mean_video) / std_video
+
 
 tt_ds = SceneDataset(config["data"]["test"]["audio_feature"],
                      config["data"]["test"]["video_feature"],
                      audio_transform,
                      video_transform)
 config["data"]["dataloader_args"]["batch_size"] = 1
-tt_dataloader = DataLoader(tt_ds, shuffle=False, **config["data"]["dataloader_args"])
+tt_dataloader = DataLoader(tt_ds, shuffle=False, **
+                           config["data"]["dataloader_args"])
 
 model = models.MeanConcatDense(512, 512, config["num_classes"])
 
@@ -89,19 +93,21 @@ keys = ['airport',
 
 scenes_pred = [keys[pred] for pred in preds]
 scenes_label = [keys[target] for target in targets]
-pred_dict = {"aid": aids, "scene_pred": scenes_pred, "scene_label": scenes_label}
+pred_dict = {"aid": aids, "scene_pred": scenes_pred,
+             "scene_label": scenes_label}
 for idx, key in enumerate(keys):
     pred_dict[key] = probs[:, idx]
-pd.DataFrame(pred_dict).to_csv(os.path.join(args.experiment_path, "prediction.csv"),
-                               index=False,
-                               sep="\t",
-                               float_format="%.3f")
+pd.DataFrame(pred_dict).to_csv(
+    os.path.join(args.experiment_path, "prediction.csv"),
+    index=False,
+    sep="\t",
+    float_format="%.3f")
 
 
 print(classification_report(targets, preds, target_names=keys), file=writer)
 
 df_cm = pd.DataFrame(cm.astype('float') / cm.sum(axis=1)[:, np.newaxis],
-    index=keys, columns=keys)
+                     index=keys, columns=keys)
 plt.figure(figsize=(15, 12))
 sn.heatmap(df_cm, annot=True)
 plt.savefig(os.path.join(args.experiment_path, 'cm.png'))

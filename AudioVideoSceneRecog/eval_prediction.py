@@ -22,7 +22,7 @@ keys = ['airport',
         'street_traffic',
         'tram']
 
-scene_to_idx = { scene: idx for idx, scene in enumerate(keys) }
+scene_to_idx = {scene: idx for idx, scene in enumerate(keys)}
 
 args = parser.parse_args()
 label_df = pd.read_csv(args.label, sep="\t")
