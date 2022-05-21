@@ -58,7 +58,7 @@ class ExpScheduler(SamplingScheduler):
 
 
 class InvSigmoidScheduler(SamplingScheduler):
-    def __init__(self, k: float = 5) -> None:
+    def __init__(self, k: float = 10) -> None:
         if k < 1:
             raise ValueError('k must be >= 1')
 
