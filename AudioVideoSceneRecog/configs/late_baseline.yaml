@@ -16,9 +16,9 @@ data:
 
 num_classes: 10
 
-output_dir: experiments/baseline
+output_dir: experiments/late_baseline
 
-model: mean_concat_dense
+model: late_baseline
 
 optimizer:
     type: Adam

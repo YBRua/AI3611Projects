@@ -75,8 +75,9 @@ logging_writer = utils.getfile_outlogger(os.path.join(output_dir, "train.log"))
 
 # init model
 model = models.get_model(config)
-
 print(model)
+logging_writer.info(f"Number of params: {utils.count_parameters(model)}")
+
 loss_fn = torch.nn.CrossEntropyLoss()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = model.to(device)
