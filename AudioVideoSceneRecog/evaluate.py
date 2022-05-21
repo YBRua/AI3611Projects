@@ -53,8 +53,6 @@ elif model_arch == "early_baseline":
 else:
     raise ValueError(f"No model named {model_arch}")
 
-model = models.MeanConcatDense(512, 512, config["num_classes"])
-
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 model.load_state_dict(torch.load(
