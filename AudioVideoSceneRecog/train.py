@@ -48,12 +48,8 @@ mean_video = mean_std_video["global_mean"]
 std_video = mean_std_video["global_std"]
 
 
-def audio_transform(x):
-    return (x - mean_audio) / std_audio
-
-
-def video_transform(x):
-    return (x - mean_video) / std_video
+def audio_transform(x): return (x - mean_audio) / std_audio
+def video_transform(x): return (x - mean_video) / std_video
 
 
 # load data
