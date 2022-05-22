@@ -79,7 +79,7 @@ print(model)
 logging_writer.info(f"Number of params: {utils.count_parameters(model)}")
 
 loss_fn = torch.nn.CrossEntropyLoss()
-reg_fn = torch.nn.MSELoss()
+# reg_fn = torch.nn.MSELoss()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = model.to(device)
 optimizer = getattr(optim, config["optimizer"]["type"])(
@@ -108,13 +108,13 @@ def train(epoch):
         optimizer.zero_grad()
 
         logit = model(audio_feat, video_feat)
-        if len(logit) == 2:
-            aud_logit, vid_logit = logit
-            penalty = reg_fn(aud_logit, vid_logit)
-            logit = (aud_logit + vid_logit) / 2
-            loss = loss_fn(logit, target) + penalty
-        else:
-            loss = loss_fn(logit, target)
+        # if len(logit) == 2:
+        #     aud_logit, vid_logit = logit
+        #     penalty = reg_fn(aud_logit, vid_logit)
+        #     logit = (aud_logit + vid_logit) / 2
+        #     loss = loss_fn(logit, target) + penalty
+        # else:
+        loss = loss_fn(logit, target)
         loss.backward()
 
         train_loss += loss.item()
