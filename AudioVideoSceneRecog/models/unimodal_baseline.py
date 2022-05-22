@@ -18,11 +18,11 @@ class UnimodalBaseline(nn.Module):
         embd_dim = audio_emb_dim if modality == 'audio' else video_emb_dim
         self.modality = modality
         self.ffwd = nn.Sequential(
-            nn.Linear(embd_dim, 512),
-            nn.BatchNorm1d(512),
+            nn.Linear(embd_dim, 768),
+            nn.BatchNorm1d(768),
             nn.ReLU(),
             nn.Dropout(p=0.2),
-            nn.Linear(512, 256)
+            nn.Linear(768, 256)
         )
         self.output = nn.Sequential(
             nn.Linear(256, 128),
