@@ -23,9 +23,10 @@ class MeanConcatDense(nn.Module):
         )
         self.outputlayer = nn.Sequential(
             nn.Linear(256, 128),
+            nn.ReLU(),
             nn.Linear(128, self.num_classes),
         )
-    
+
     def forward(self, audio_feat, video_feat):
         # audio_feat: [batch_size, time_steps, feat_dim]
         # video_feat: [batch_size, time_steps, feat_dim]
@@ -34,8 +35,7 @@ class MeanConcatDense(nn.Module):
 
         video_emb = video_feat.mean(1)
         video_emb = self.video_embed(video_emb)
-        
+
         embed = torch.cat((audio_emb, video_emb), 1)
         output = self.outputlayer(embed)
         return output
-

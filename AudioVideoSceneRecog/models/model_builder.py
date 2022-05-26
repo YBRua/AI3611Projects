@@ -6,7 +6,7 @@ from .mean_concat_dense import MeanConcatDense
 from .unimodal_baseline import UnimodalBaseline
 
 from .late_weighted import LateWeighted
-from .mma import MultiModalAttention
+from .mma import BottlenectedAttention
 
 from typing import Dict
 
@@ -26,7 +26,7 @@ def get_model(config: Dict) -> nn.Module:
     elif model_arch == 'late_weighted':
         model = LateWeighted(512, 512, config["num_classes"])
     elif model_arch == "multi_modal_attention":
-        model = MultiModalAttention(512, 512, config["num_classes"])
+        model = BottlenectedAttention(512, 512, config["num_classes"])
     else:
         raise ValueError(f"No model named {model_arch}")
     return model

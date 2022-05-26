@@ -11,16 +11,14 @@ class LateBaseline(nn.Module):
             nn.BatchNorm1d(512),
             nn.ReLU(),
             nn.Dropout(p=0.2),
-            nn.Linear(512, 128),
-            nn.Linear(128, self.num_classes)
+            nn.Linear(512, self.num_classes)
         )
         self.video_predictor = nn.Sequential(
             nn.Linear(video_emb_dim, 512),
             nn.BatchNorm1d(512),
             nn.ReLU(),
             nn.Dropout(p=0.2),
-            nn.Linear(512, 128),
-            nn.Linear(128, self.num_classes)
+            nn.Linear(512, self.num_classes)
         )
 
     def forward(
@@ -37,7 +35,4 @@ class LateBaseline(nn.Module):
 
         output = audio_pred + video_pred / 2
 
-        if self.training:
-            return audio_pred, video_pred
-        else:
-            return output
+        return output

@@ -16,6 +16,7 @@ class EarlyBaseline(nn.Module):
         )
         self.output = nn.Sequential(
             nn.Linear(256, 128),
+            nn.ReLU(),
             nn.Linear(128, self.num_classes),
         )
 

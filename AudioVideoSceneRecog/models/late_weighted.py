@@ -11,16 +11,14 @@ class LateWeighted(nn.Module):
             nn.BatchNorm1d(512),
             nn.ReLU(),
             nn.Dropout(p=0.2),
-            nn.Linear(512, 128),
-            nn.Linear(128, self.num_classes)
+            nn.Linear(512, self.num_classes)
         )
         self.video_predictor = nn.Sequential(
             nn.Linear(video_emb_dim, 512),
             nn.BatchNorm1d(512),
             nn.ReLU(),
             nn.Dropout(p=0.2),
-            nn.Linear(512, 128),
-            nn.Linear(128, self.num_classes)
+            nn.Linear(512, self.num_classes)
         )
         self.vote_weights = nn.Parameter(
             torch.zeros((1, self.num_classes)),

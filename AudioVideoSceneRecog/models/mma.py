@@ -65,7 +65,7 @@ class MultiHeadAttention(nn.Module):
         return out.flatten(-2)
 
 
-class MultiModalAttention(nn.Module):
+class BottlenectedAttention(nn.Module):
     def __init__(
             self,
             audio_embd: int,
@@ -96,14 +96,8 @@ class MultiModalAttention(nn.Module):
         self.ln = nn.LayerNorm(hidden_dim)
 
         self.aud_pred = nn.Sequential(
-            nn.Linear(hidden_dim, hidden_dim),
-            nn.Dropout(p=0.2),
-            nn.ReLU(),
             nn.Linear(hidden_dim, num_classes))
         self.vid_pred = nn.Sequential(
-            nn.Linear(hidden_dim, hidden_dim),
-            nn.Dropout(p=0.2),
-            nn.ReLU(),
             nn.Linear(hidden_dim, num_classes))
 
     def _get_btnk_mask(self, L: int):
@@ -158,7 +152,4 @@ class MultiModalAttention(nn.Module):
         aud_pred = self.aud_pred(aud_out)
         vid_pred = self.vid_pred(vid_out)
 
-        if self.training:
-            return aud_pred, vid_pred
-        else:
-            return (aud_pred + vid_pred) / 2
+        return (aud_pred + vid_pred) / 2

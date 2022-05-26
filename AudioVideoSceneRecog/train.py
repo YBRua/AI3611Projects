@@ -2,6 +2,7 @@ from pathlib import Path
 import os
 import argparse
 import time
+import torch.nn.functional as F
 import random
 
 from tqdm import tqdm
@@ -14,6 +15,7 @@ from torch.utils.data import DataLoader
 import torch.optim as optim
 
 from dataset import SceneDataset
+import augmentation
 import models
 import utils
 
@@ -79,6 +81,7 @@ print(model)
 logging_writer.info(f"Number of params: {utils.count_parameters(model)}")
 
 loss_fn = torch.nn.CrossEntropyLoss()
+eval_loss_fn = torch.nn.CrossEntropyLoss()
 # reg_fn = torch.nn.MSELoss()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = model.to(device)
@@ -87,6 +90,7 @@ optimizer = getattr(optim, config["optimizer"]["type"])(
     **config["optimizer"]["args"])
 lr_scheduler = optim.lr_scheduler.ReduceLROnPlateau(
     optimizer,
+    verbose=True,
     **config["lr_scheduler"]["args"])
 
 print('-----------start training-----------')
@@ -104,29 +108,26 @@ def train(epoch):
         video_feat = batch["video_feat"].to(device)
         target = batch["target"].to(device)
 
+        # optional data augmentation
+        if config['augmentation']:
+            audio_feat, video_feat, target = augmentation.uniform_noise(
+                audio_feat, video_feat, target)
+
         # training
         optimizer.zero_grad()
-
         logit = model(audio_feat, video_feat)
-        # if len(logit) == 2:
-        #     aud_logit, vid_logit = logit
-        #     penalty = reg_fn(aud_logit, vid_logit)
-        #     logit = (aud_logit + vid_logit) / 2
-        #     loss = loss_fn(logit, target) + penalty
-        # else:
         loss = loss_fn(logit, target)
         loss.backward()
-
         train_loss += loss.item()
         optimizer.step()
 
-        if (batch_idx + 1) % 100 == 0:
-            elapsed = time.time() - start_time
-            print(
-                f'| epoch {epoch:3d} ',
-                f'| batch {batch_idx:5d}/{len(tr_dataloader):5d} ',
-                f'| {elapsed * 1000 / (batch_idx + 1):5.2f} ms/batch ',
-                f'| loss {loss.item:5.2f} |')
+        # if (batch_idx + 1) % 100 == 0:
+        #     elapsed = time.time() - start_time
+        #     print(
+        #         f'| epoch {epoch:3d} ',
+        #         f'| batch {batch_idx:5d}/{len(tr_dataloader):5d} ',
+        #         f'| {elapsed * 1000 / (batch_idx + 1):5.2f} ms/batch ',
+        #         f'| loss {loss.item():5.2f} |')
 
     train_loss /= (batch_idx + 1)
     logging_writer.info('-' * 99)
@@ -150,7 +151,7 @@ def validate(epoch):
             video_feat = batch["video_feat"].to(device)
             target = batch["target"].to(device)
             logit = model(audio_feat, video_feat)
-            loss = loss_fn(logit, target)
+            loss = eval_loss_fn(logit, target)
             pred = torch.argmax(logit, 1)
             targets.append(target.cpu().numpy())
             preds.append(pred.cpu().numpy())

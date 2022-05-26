@@ -9,7 +9,8 @@ class SceneDataset(data.Dataset):
                  audio_feature,
                  video_feature,
                  audio_transform=None,
-                 video_transform=None):
+                 video_transform=None,
+                 train=False):
         super().__init__()
         self.audio_feature = audio_feature
         self.video_feature = video_feature
@@ -17,6 +18,8 @@ class SceneDataset(data.Dataset):
         self.video_transform = video_transform
         self.audio_hf = None
         self.video_hf = None
+
+        self.augmented = False
 
         self.all_files = []
 
