@@ -1,0 +1,37 @@
+data:
+    train:
+        audio_feature: ./data/audio_features_data/train.hdf5
+        video_feature: ./data/video_features_data/train.hdf5
+    cv:
+        audio_feature: ./data/audio_features_data/val.hdf5
+        video_feature: ./data/video_features_data/val.hdf5
+    test:
+        audio_feature: ./data/audio_features_data/test.hdf5
+        video_feature: ./data/video_features_data/test.hdf5
+    audio_norm: ./data/audio_features_data/global_mean_std.npz
+    video_norm: ./data/video_features_data/global_mean_std.npz
+    dataloader_args:
+        num_workers: 0
+        batch_size: 128
+
+num_classes: 10
+
+output_dir: experiments/late_baseline
+
+model: late_baseline
+
+optimizer:
+    type: Adam
+    args:
+        lr: !!float 1e-4
+        weight_decay: !!float 1e-4
+
+lr_scheduler:
+    args:
+        patience: 3
+        factor: 0.1
+
+epoch: 100
+early_stop: 7
+
+augmentation: True
