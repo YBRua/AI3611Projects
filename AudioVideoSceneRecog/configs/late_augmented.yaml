@@ -16,7 +16,7 @@ data:
 
 num_classes: 10
 
-output_dir: experiments/late_baseline
+output_dir: experiments/late_augmented
 
 model: late_baseline
 
