@@ -5,6 +5,7 @@ from .early_baseline import EarlyBaseline
 from .mean_concat_dense import MeanConcatDense
 from .unimodal_baseline import UnimodalBaseline
 
+from .hybrid_baseline import HybridBaseline
 from .late_weighted import LateWeighted
 from .mma import BottleneckAttention
 from .mma import MultiModalAttention
@@ -26,6 +27,8 @@ def get_model(config: Dict) -> nn.Module:
         model = UnimodalBaseline(512, 512, config["num_classes"], "video")
     elif model_arch == 'late_weighted':
         model = LateWeighted(512, 512, config["num_classes"])
+    elif model_arch == 'hybrid_baseline':
+        model = HybridBaseline(512, 512, config["num_classes"])
     elif model_arch == "multi_modal_attention":
         model = MultiModalAttention(512, 512, config["num_classes"])
     elif model_arch == "bottleneck_attention":

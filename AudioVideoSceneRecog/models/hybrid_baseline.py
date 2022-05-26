@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 
 
-class LateBaseline(nn.Module):
+class HybridBaseline(nn.Module):
     def __init__(self, audio_emb_dim, video_emb_dim, num_classes) -> None:
         super().__init__()
         self.num_classes = num_classes
