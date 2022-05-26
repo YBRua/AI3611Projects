@@ -33,3 +33,5 @@ lr_scheduler:
 
 epoch: 100
 early_stop: 7
+
+augmentation: False

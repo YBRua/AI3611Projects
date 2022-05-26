@@ -16,9 +16,9 @@ data:
 
 num_classes: 10
 
-output_dir: experiments/early_baseline
+output_dir: experiments/bottleneck_attention
 
-model: early_baseline
+model: bottleneck_attention
 
 optimizer:
     type: Adam

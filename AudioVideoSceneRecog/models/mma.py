@@ -65,7 +65,53 @@ class MultiHeadAttention(nn.Module):
         return out.flatten(-2)
 
 
-class BottlenectedAttention(nn.Module):
+class MultiModalAttention(nn.Module):
+    def __init__(
+            self,
+            audio_embd: int,
+            video_embd: int,
+            num_classes: int,
+            hidden_dim: int = 320,
+            n_heads: int = 10):
+        super().__init__()
+
+        self.cls_tok = nn.Parameter(
+            torch.zeros((1, 1, audio_embd)),
+            requires_grad=True)
+
+        self.pos_embd = PositionalEncoding(audio_embd)
+
+        self.attn = MultiHeadAttention(audio_embd, hidden_dim, n_heads)
+        self.ln = nn.LayerNorm(hidden_dim)
+
+        self.output = nn.Sequential(
+            nn.Linear(hidden_dim, num_classes))
+
+    def forward(
+            self,
+            audio_feat: torch.Tensor,
+            video_feat: torch.Tensor):
+        B = audio_feat.shape[0]
+
+        # append CLS tokens
+        # B, 1, D
+        cls_tok = self.cls_tok.expand(B, -1, -1)
+
+        # B, 2L+1, D
+        feats = torch.cat([cls_tok, audio_feat, video_feat], dim=1)
+        feats = self.pos_embd(feats)
+
+        out = self.attn(feats, feats, feats)
+        out = self.ln(out)
+
+        cls_tok = out[:, 0]
+
+        out = self.output(cls_tok)
+
+        return out
+
+
+class BottleneckAttention(nn.Module):
     def __init__(
             self,
             audio_embd: int,
