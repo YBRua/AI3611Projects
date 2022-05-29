@@ -55,6 +55,6 @@ class HybridBaseline(nn.Module):
         fushion_pred = self.outputlayer(
             torch.cat((audio_emb, video_emb), 1))
 
-        output = audio_pred + video_pred + fushion_pred / 3
+        output = (audio_pred + video_pred + fushion_pred) / 3
 
         return output

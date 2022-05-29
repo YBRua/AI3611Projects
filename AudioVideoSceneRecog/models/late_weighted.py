@@ -20,11 +20,11 @@ class LateWeighted(nn.Module):
             nn.Dropout(p=0.2),
             nn.Linear(512, self.num_classes)
         )
-        self.vote_weights = nn.Parameter(
+        self.vid_w = nn.Parameter(
             torch.zeros((1, self.num_classes)),
             requires_grad=True)
         with torch.no_grad():
-            self.vote_weights.uniform_(-0.05, 0.05)
+            self.vid_w.uniform_(-0.1, 0.1)
 
     def forward(
             self,
@@ -38,7 +38,6 @@ class LateWeighted(nn.Module):
         video_emb = video_feat.mean(1)
         video_pred = self.video_predictor(video_emb)
 
-        weights = torch.sigmoid(self.vote_weights)
-        output = audio_pred * weights + video_pred * (1 - weights)
+        output = audio_pred + video_pred * self.vid_w
 
         return output

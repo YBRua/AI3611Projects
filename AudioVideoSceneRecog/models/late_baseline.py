@@ -33,6 +33,6 @@ class LateBaseline(nn.Module):
         video_emb = video_feat.mean(1)
         video_pred = self.video_predictor(video_emb)
 
-        output = audio_pred + video_pred / 2
+        output = (audio_pred + video_pred) / 2
 
         return output

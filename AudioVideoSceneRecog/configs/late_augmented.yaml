@@ -18,7 +18,7 @@ num_classes: 10
 
 output_dir: experiments/late_augmented
 
-model: late_baseline
+model: late_weighted
 
 optimizer:
     type: Adam
