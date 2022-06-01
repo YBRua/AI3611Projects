@@ -7,7 +7,7 @@ from typing import List
 
 
 matplotlib.style.use('seaborn-white')
-sns.set_theme('paper', 'white', font_scale=1.75)
+sns.set_theme('paper', 'white', font_scale=2.5)
 
 
 # %%
@@ -44,7 +44,7 @@ asc_f1 = [0.75, 0.72, 0.67, 0.66, 0.84, 0.63, 0.62, 0.62, 0.81, 0.65]
 vsc_f1 = [0.43, 0.73, 0.77, 0.85, 0.82, 0.49, 0.60, 0.58, 0.70, 0.52]
 
 
-fig, ax = plt.subplots(figsize=(15, 4))
+fig, ax = plt.subplots(figsize=(15, 5))
 ax = plot_grouped_bars(
     ax,
     [baseline_f1, asc_f1, vsc_f1],
@@ -54,11 +54,11 @@ ax = plot_grouped_bars(
         'square', 'mall', 'str_pede', 'str_traf', 'tram'
     ],
     ['C0', 'C1', 'C2'])
-ax.legend(bbox_to_anchor=(0.5, -0.2), ncol=3, loc='upper center')
+ax.legend(bbox_to_anchor=(0.5, -0.5), ncol=3, loc='upper center')
 ax.set_ylim([0, 1])
 ax.set_xlabel('Class')
 ax.set_ylabel('F1 score')
-ax.set_title('F1 Score for Different Modals', fontsize=20)
+ax.set_title('F1 Score for Different Modals')
 fig.tight_layout()
 fig.savefig('avsc-f1.pdf', bbox_inches='tight')
 

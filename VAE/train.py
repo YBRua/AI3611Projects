@@ -9,7 +9,7 @@ from torch.utils.data import DataLoader
 from torchvision.utils import save_image
 
 import data_prep
-import vaeplotlib
+import vaeplotlib as vplot
 from loss_funcs import BCEKLDLoss, BCELoss
 from models import get_vae, get_ae
 from common import setup_logger
@@ -119,22 +119,6 @@ def test_epoch(
     return avg_loss, avg_recon_loss, avg_hidden_loss
 
 
-def sample(
-        sample_size: int,
-        z_dim: int,
-        model: nn.Module,
-        device: torch.device,
-        file_postfix: str):
-    model.eval()
-    with torch.no_grad():
-        z = torch.randn(sample_size, z_dim).to(device)
-        x = model.decode(z)
-        save_image(
-            x.view(sample_size, 1, 28, 28),
-            f'./images/sample{file_postfix}.png',
-            nrow=10)
-
-
 def parse_args():
     parser = ArgumentParser()
 
@@ -164,11 +148,11 @@ def parse_args():
         help='Use AE if enabled. Otherwise a VAE is used.')
     parser.add_argument(
         '--encoder', choices=['MLP', 'MLP3', 'CONV'],
-        default='MLP',
+        default='MLP3',
         help='Encoder architecture')
     parser.add_argument(
         '--decoder', choices=['MLP', 'MLP3', 'CONV'],
-        default='MLP',
+        default='MLP3',
         help='Decoder architecture')
     parser.add_argument(
         '--alpha', type=float, default=1.0,
@@ -196,6 +180,8 @@ def main():
     if args.model_save is None:
         MODEL_SAVE = f'model{AE_LABEL}_{args.encoder}_{args.decoder}_{Z_DIM}'
         MODEL_SAVE = f'./ckpts/{MODEL_SAVE}.pt'
+    else:
+        MODEL_SAVE = args.model_save
     if DO_TRAINING:
         logger = setup_logger(args)
 
@@ -275,39 +261,35 @@ def main():
                 torch.save(model.state_dict(), MODEL_SAVE)
 
             # sample from model
-            if not args.ae:
-                sample(50, Z_DIM, model, device, FILE_POSTFIX)
+            # if not args.ae:
+            vplot.sample(100, Z_DIM, model, device, FILE_POSTFIX)
 
         logger.info(f'Number of parameters: {n_params}')
         logger.info(f'Best epoch {best_epoch} (loss {best_test_loss:9.4f})')
 
         if not args.ae:
-            fig, axes = vaeplotlib.loss_curve(
-                losses, recon_losses, kldiv_losses)
-            fig.savefig(
-                f'./images/loss-curve{FILE_POSTFIX}.png')
+            fig, axes = vplot.loss_curve(losses, recon_losses, kldiv_losses)
+            fig.savefig(f'./images/loss-curve{FILE_POSTFIX}.png')
 
     # if not train
     else:
+        print(f'Loading model from {MODEL_SAVE}')
         model.load_state_dict(torch.load(MODEL_SAVE))
-        if not args.ae:
-            sample(50, Z_DIM, model, device, FILE_POSTFIX)
+        # if not args.ae:
+        vplot.sample(100, Z_DIM, model, device, FILE_POSTFIX)
 
     # sample from model (2d and 1d latent space only)
     if Z_DIM == 2:
         model.load_state_dict(torch.load(MODEL_SAVE))
         model.eval()
-        if not args.ae:
-            vaeplotlib.plot_grid_sample(
-                -5, 5, 0.25, model, device, FILE_POSTFIX)
-        fig, ax = vaeplotlib.plot_latent_space(test_loader, model, device)
-        fig.savefig(
-            f'./images/latent{FILE_POSTFIX}.png')
+        # if not args.ae:
+        vplot.plot_grid_sample(-5, 5, 0.25, model, device, FILE_POSTFIX)
+        fig, ax = vplot.plot_latent_space(test_loader, model, device)
+        fig.savefig(f'./images/latent{FILE_POSTFIX}.png')
     if Z_DIM == 1 and not args.ae:
         model.load_state_dict(torch.load(MODEL_SAVE))
         model.eval()
-        vaeplotlib.plot_line_sample(
-            -5, 5, 0.05, model, device, FILE_POSTFIX)
+        vplot.plot_line_sample(-5, 5, 0.05, model, device, FILE_POSTFIX)
 
 
 if __name__ == '__main__':

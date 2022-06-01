@@ -25,7 +25,7 @@ def gen_line_sample(
         zs = zs.to(device)
         samples = model.decode(zs)
 
-    return samples
+    return samples  # B, 1, H, W
 
 
 def gen_grid_sample(
@@ -46,6 +46,25 @@ def gen_grid_sample(
         samples = model.decode(zs)
 
     return samples
+
+
+def sample(
+        sample_size: int,
+        z_dim: int,
+        model: VAE,
+        device: torch.device,
+        file_postfix: str,
+        mean: float = 0.,
+        std: float = 1.,):
+    model.eval()
+    with torch.no_grad():
+        z = torch.randn(sample_size, z_dim).to(device)
+        z = z * std + mean
+        x = model.decode(z)
+        save_image(
+            x.view(sample_size, 1, 28, 28),
+            f'./images/sample{file_postfix}.png',
+            nrow=10)
 
 
 def plot_line_sample(
