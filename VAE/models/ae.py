@@ -11,6 +11,12 @@ class Buggy(Exception):
 
 
 class AE(nn.Module):
+    """Universal Framework for AutoEncoder
+
+    Args:
+        encoder (BaseEncoder): Encoder block.
+        decoder (BaseDecoder): Decoder block.
+    """
     def __init__(
             self, encoder: BaseEncoder, decoder: BaseDecoder):
         super().__init__()

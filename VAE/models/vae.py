@@ -8,6 +8,12 @@ from .encoder import BaseEncoder
 
 
 class VAE(nn.Module):
+    """Universal framework for Variational AutoEncoder
+
+    Args:
+        encoder (BaseEncoder): Encoder block.
+        decoder (BaseDecoder): Decoder block.
+    """
     def __init__(
             self, encoder: BaseEncoder, decoder: BaseDecoder):
         super().__init__()

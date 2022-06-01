@@ -56,6 +56,18 @@ def sample(
         file_postfix: str,
         mean: float = 0.,
         std: float = 1.,):
+    """Sample from the latent space, generate outputs and plot the result.
+    Samples will be drawn from a normal distribution.
+
+    Args:
+        sample_size (int): Number of samples to draw
+        z_dim (int): Dimension of the latent space
+        model (VAE): VAE model
+        device (torch.device): Device
+        file_postfix (str): Postfix used to distinguish different files
+        mean (float, optional): Mean of the latent space. Default 0.
+        std (float, optional): Standard deviation of the latent space. Default 1.
+    """
     model.eval()
     with torch.no_grad():
         z = torch.randn(sample_size, z_dim).to(device)
@@ -74,6 +86,17 @@ def plot_line_sample(
         model: VAE,
         device: torch.device,
         file_postfix: str):
+    """Generates and plots a 1D line of samples from the latent space.
+
+    Args:
+        low (float): Lower bound of latent space.
+        high (float): Upper bound of latent space.
+        step_size (float): Step size of grid.
+        model (VAE): VAE model.
+        device (_type_): Device to use.
+        file_postfix (str): Postfix for the saved file.
+            Used to distinguish different models
+    """
     samples = gen_line_sample(low, high, step_size, model, device)
     samples = samples.reshape(-1, 1, samples.shape[-2], samples.shape[-1])
     save_image(
