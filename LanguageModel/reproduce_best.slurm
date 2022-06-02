@@ -1,7 +1,6 @@
 #!/bin/bash
 
-#!/bin/bash
-#SBATCH --job-name=rua_lm
+#SBATCH --job-name=lm_best
 #SBATCH --partition=a100
 #SBATCH -N 1
 #SBATCH -n 1

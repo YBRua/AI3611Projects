@@ -1,5 +1,6 @@
 #!/bin/bash
 
+#SBATCH --job-name=sed_best
 #SBATCH -p a100
 #SBATCH -N 1
 #SBATCH -n 1
