@@ -35,7 +35,7 @@ python train.py --encoder MLP3 --decoder MLP3 --z_dim 2 --skip_training --model_
   - `loss-curve.png` 是训练时 Loss 的曲线
   - Latent Dim = 1 的模型会额外生成 `line-sample.png` ([-5, 5] 等间距采样后生成的图片)
   - Latent Dim = 2 的模型会额外生成 `grid-sample.png` (二维隐层空间等间距采样后生成的图片)
-  - Latent Dim = 2 的模型会额外生成 `latent-space.pn` (测试集样本在二维隐层空间的散点图)
+  - Latent Dim = 2 的模型会额外生成 `latent-space.png` (测试集样本在二维隐层空间的散点图)
 
 ## 命令行参数
 
@@ -52,6 +52,7 @@ python train.py --encoder MLP3 --decoder MLP3 --z_dim 2 --skip_training --model_
 - `--decoder`: 解码器架构. 可选为 `MLP` `MLP3` `CONV`. 默认 `MLP3`
 - `--alpha`: 重构损失和 KLDiv 的权重，默认为 1
 - `--z_dim`: 隐层空间大小. 默认为 2
+- `--no_tqdm`: 不使用 `tqdm` 显示进度条. 用于 slurm 脚本，防止 stderr 被 tqdm 污染
 
 ## 文件说明
 

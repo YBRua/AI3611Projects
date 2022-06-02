@@ -13,4 +13,4 @@
 source /dssg/home/acct-stu/stu491/.bashrc
 conda activate sed
 
-python train.py --encoder MLP3 --decoder MLP3 --z_dim 16
+python train.py --encoder MLP3 --decoder MLP3 --z_dim 16 --no_tqdm

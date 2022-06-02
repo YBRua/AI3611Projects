@@ -23,9 +23,13 @@ def train_epoch(
         loss_fn: Callable,
         device: torch.device,
         is_ae: bool,
-        file_postfix: str):
+        file_postfix: str,
+        no_tqdm: bool = False):
     model.train()
-    progress = tqdm(dataloader)
+    if no_tqdm:
+        progress = dataloader
+    else:
+        progress = tqdm(dataloader)
     tot_loss = 0.0
     tot_recon_loss = 0.0
     tot_hidden_loss = 0.0
@@ -53,21 +57,23 @@ def train_epoch(
 
         if is_ae:
             avg_loss = tot_loss / (bid + 1)
-            progress.set_description(
-                '| Training '
-                f'| Epoch: {e:2} '
-                f'| Loss: {avg_loss:9.4f} |')
+            if not no_tqdm:
+                progress.set_description(
+                    '| Training '
+                    f'| Epoch: {e:2} '
+                    f'| Loss: {avg_loss:9.4f} |')
         else:
             avg_loss = tot_loss / (bid + 1)
             avg_recon_loss = tot_recon_loss / (bid + 1)
             avg_hidden_loss = tot_hidden_loss / (bid + 1)
 
-            progress.set_description(
-                '| Training '
-                f'| Epoch {e:2} |'
-                f' Loss {avg_loss:9.4f} |'
-                f' Recon {avg_recon_loss:9.4f} |'
-                f' KLDiv {avg_hidden_loss:9.4f} |')
+            if not no_tqdm:
+                progress.set_description(
+                    '| Training '
+                    f'| Epoch {e:2} |'
+                    f' Loss {avg_loss:9.4f} |'
+                    f' Recon {avg_recon_loss:9.4f} |'
+                    f' KLDiv {avg_hidden_loss:9.4f} |')
 
         if bid == 0 and not is_ae:
             nelem = x.size(0)
@@ -160,6 +166,9 @@ def parse_args():
     parser.add_argument(
         '--z_dim', type=int, default=2,
         help='Size of hidden dimension z')
+    parser.add_argument(
+        '--no_tqdm', action='store_true',
+        help='Disable tqdm, used in slurm')
 
     return parser.parse_args()
 
@@ -225,7 +234,7 @@ def main():
         for e in range(N_EPOCHS):
             l_train, recon_train, kl_train = train_epoch(
                 e, train_loader, model, optimizer,
-                loss_fn, device, args.ae, FILE_POSTFIX)
+                loss_fn, device, args.ae, FILE_POSTFIX, args.no_tqdm)
             if args.ae:
                 logger.info(
                     f'| Epoch {e:2} '
