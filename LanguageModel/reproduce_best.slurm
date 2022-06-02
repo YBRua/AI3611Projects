@@ -8,8 +8,8 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --gres=gpu:1
 #SBATCH --mem=10G
-#SBATCH --output=../slurm/lm-%A.log
-#SBATCH --error=../slurm/lm-%A.log
+#SBATCH --output=./slurm/lm-%A.log
+#SBATCH --error=./slurm/lm-%A.log
 
 source /dssg/home/acct-stu/stu463/.bashrc
 conda activate espnet
