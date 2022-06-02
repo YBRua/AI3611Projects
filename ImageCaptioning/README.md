@@ -1,12 +1,19 @@
+# AI3611 Project Image Captioning
+
+## Not Implemented Error
+
+因为在交我算上跑起来实在是太慢了所以只做了 Baseline 和 Scheduled Sampling.
+
+## 运行
+
 准备好环境后, 跑 baseline (注意将环境初始化部分改成自己的设置):
 
 ```bash
 sbatch run.sh
 ```
 
+- evaluate.py 用于计算指标，预测结果 `prediction.json` 写成这样的形式:
 
-注: 
-1. evaluate.py 用于计算指标，预测结果 `prediction.json` 写成这样的形式:
 ```json
 [
     {
@@ -24,13 +31,16 @@ sbatch run.sh
     ......
 ]
 ```
+
 调用方法：
+
 ```bash
 python evaluate.py --prediction_file prediction.json \
                    --reference_file /dssg/home/acct-stu/stu464/data/image_caption/caption.txt \
                    --output_file result.txt
 ```
-2. 首次调用 SPICE 时需要下载一些包，可以直接从以下位置拷贝到对应的位置:
-* /dssg/home/acct-stu/stu464/.conda/envs/pytorch/lib/python3.7/site-packages/pycocoevalcap/spice/spice-1.0.jar
-* /dssg/home/acct-stu/stu464/.conda/envs/pytorch/lib/python3.7/site-packages/pycocoevalcap/spice/lib/stanford-corenlp-3.6.0.jar
-* /dssg/home/acct-stu/stu464/.conda/envs/pytorch/lib/python3.7/site-packages/pycocoevalcap/spice/lib/stanford-corenlp-3.6.0-models.jar
+
+- 首次调用 SPICE 时需要下载一些包，可以直接从以下位置拷贝到对应的位置:
+  - /dssg/home/acct-stu/stu464/.conda/envs/pytorch/lib/python3.7/site-packages/pycocoevalcap/spice/spice-1.0.jar
+  - /dssg/home/acct-stu/stu464/.conda/envs/pytorch/lib/python3.7/site-packages/pycocoevalcap/spice/lib/stanford-corenlp-3.6.0.jar
+  - /dssg/home/acct-stu/stu464/.conda/envs/pytorch/lib/python3.7/site-packages/pycocoevalcap/spice/lib/stanford-corenlp-3.6.0-models.jar
