@@ -20,7 +20,6 @@ class Crnn(nn.Module):
             dropout: float = 0.0,
             gru_hidden: Optional[int] = None):
         ##############################
-        # YOUR IMPLEMENTATION
         # Args:
         #     num_freq: int, mel frequency bins
         #     class_num: int, the number of output classes
@@ -59,7 +58,6 @@ class Crnn(nn.Module):
 
     def detection(self, x):
         ##############################
-        # YOUR IMPLEMENTATION
         # Args:
         #     x: [batch_size, time_steps, num_freq]
         # Return:
