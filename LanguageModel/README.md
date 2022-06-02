@@ -4,7 +4,9 @@
 
 ### 交我算超算平台
 
-本项目代码位于 `/dssg/home/acct-stu/stu491/projects/LanguageModel` 目录下. 我们使用助教提供的 Conda 环境 (`espnet`) 进行实验. 
+本项目代码位于 `/dssg/home/acct-stu/stu491/projects/LanguageModel` 目录下. 我们使用助教提供的 Conda 环境 (`espnet`) 进行实验.
+
+课程项目的代码同时保存在了 [Github仓库](https://github.com/YBRua/AI3611Projects)
 
 ### Shell 和 Sbatch 脚本
 
@@ -12,7 +14,7 @@
 
 > 最优结果为 Adam 训练的 BiLSTM 模型，Hidden size 512, Embedding size 512.
 
-- 要一键复现最优结果，请运行
+- 要一键复现最优结果，请通过 `reproduce_best.slurm` 提交任务
 
 ```sh
 sbatch reproduce_best.slurm
@@ -58,7 +60,7 @@ source run_main.sh
 
 两个脚本共用命令行参数
 
-- `--data`: 数据集目录. 交我算平台上的数据集通过符号链接链接到助教账号下的数据集. 通常为 `./data/gigaspeech`.
+- `--data`: 数据集目录. 交我算平台上的代码目录通过符号链接链接到助教账号下的数据集. 运行时该参数通常为 `./data/gigaspeech`.
 - `--model`: 模型架构. 可选参数为 `RNN_TANH`, `RNN_RELU`, `LSTM`, `GRU`, `Transformer`. 默认为 `LSTM`
 - `--emsize`: 词嵌入的维度大小. 默认为 200.
 - `--nhid`: RNN 或 Transformer 的隐藏层大小. 默认为 200.
