@@ -1,17 +1,17 @@
 data:
     train:
-        audio_feature: ./data/audio_features_data/train.hdf5
-        video_feature: ./data/video_features_data/train.hdf5
+        audio_feature: /dssg/home/acct-stu/stu464/ai3611/av_scene_classify/data/feature/audio_features_data/train.hdf5
+        video_feature: /dssg/home/acct-stu/stu464/ai3611/av_scene_classify/data/feature/video_features_data/train.hdf5
     cv:
-        audio_feature: ./data/audio_features_data/val.hdf5
-        video_feature: ./data/video_features_data/val.hdf5
+        audio_feature: /dssg/home/acct-stu/stu464/ai3611/av_scene_classify/data/feature/audio_features_data/val.hdf5
+        video_feature: /dssg/home/acct-stu/stu464/ai3611/av_scene_classify/data/feature/video_features_data/val.hdf5
     test:
-        audio_feature: ./data/audio_features_data/test.hdf5
-        video_feature: ./data/video_features_data/test.hdf5
-    audio_norm: ./data/audio_features_data/global_mean_std.npz
-    video_norm: ./data/video_features_data/global_mean_std.npz
+        audio_feature: /dssg/home/acct-stu/stu464/ai3611/av_scene_classify/data/feature/audio_features_data/test.hdf5
+        video_feature: /dssg/home/acct-stu/stu464/ai3611/av_scene_classify/data/feature/video_features_data/test.hdf5
+    audio_norm: /dssg/home/acct-stu/stu464/ai3611/av_scene_classify/data/feature/audio_features_data/global_mean_std.npz
+    video_norm: /dssg/home/acct-stu/stu464/ai3611/av_scene_classify/data/feature/video_features_data/global_mean_std.npz
     dataloader_args:
-        num_workers: 0
+        num_workers: 1
         batch_size: 128
 
 num_classes: 10
