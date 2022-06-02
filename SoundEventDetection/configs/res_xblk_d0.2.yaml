@@ -1,8 +1,6 @@
 augment:
   mode:
-  - time_shift
-  - spec_aug
-  - mixup
+  - block_mixing
 data:
   class_indice_file: data/metadata/class_label_indices.txt
   feature: data/dev/feature.csv
