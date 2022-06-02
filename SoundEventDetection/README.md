@@ -35,3 +35,17 @@ sbatch reproduce_best.slurm
     - `n_channels`: 3 个元素的 List. Crnn 默认有且只有 3 个卷积 Block，每个 Block 的 Output Channels 由这里指定
     - `pooling_sizes`: 3 个元素的 List. Pooling Layer 的 Kernel Size
     - `conv_block`: 卷积层的配置. 可以是 `conv` (默认的基线卷积层)，或 `res` (带残差连接的卷积层)
+
+## 其他
+
+`run.py` 额外接受一个可选填的参数 `<name>`，如果提供，则保存实验日志时不会使用 uuid，而是使用 `<name>`，例如
+
+```sh
+python run.py train_evaluate \
+  configs/baseline.yaml \
+  data/eval/feature.csv \
+  data/eval/label.csv \
+  baseline_is_all_you_need
+```
+
+则实验日志回报存在 `./experiment/<timestamp>-baseline_is_all_you_need/` 目录下
