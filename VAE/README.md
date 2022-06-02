@@ -4,7 +4,7 @@
 
 ### 交我算超算平台
 
-本项目代码位于 `/dssg/home/acct-stu/stu491/projects/VAE` 目录下. 我们使用助教提供的 Conda 环境 (`espnet`) 进行实验.
+本项目代码位于 `/dssg/home/acct-stu/stu491/projects/VAE` 目录下. 我们使用自行配置的环境进行实验. 我们在 `stu491` 目录下安装了 MiniConda，并在该 MiniConda 下配置了 `sed` 虚拟环境.
 
 课程项目的代码同时保存在了 [Github仓库](https://github.com/YBRua/AI3611Projects)
 
