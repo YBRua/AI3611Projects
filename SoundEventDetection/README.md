@@ -27,7 +27,7 @@ sbatch reproduce_best.slurm
 
 - `augment`: 可选，如果有，则会使用数据增强
   - `mode`: 一个 List，指定了需要使用的数据增强类型. 数据增强会**按 List 中出现的顺序被作用于输入数据**
-    - List 中的元素可以是 `time_shift` `spec_aug` `mixup` `block_mixing`
+    - List 中的元素可以是 `time_shift` `spec_aug` `mixup` `xblock_mixing`
 - `model`
   - `type`: 可以是 `Crnn` `GatedCrnn` 或 `ConvTransformer`，~~但是 `Crnn` 之外的模型都不太 work~~
   - `args`: 模型构造函数的 Keyword Arguments
